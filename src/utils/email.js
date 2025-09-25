@@ -16,11 +16,11 @@ export const sendEmail = async (_id , email, otpCode ) => {
 
       // send mail with defined transport object
       const info = await transporter.sendMail({
-        from: `"project 👻" <${process.env.SENDEMAIL}>`, // sender address
-        to: email, // list of receivers
-        subject: "Confirm Email", // Subject line
-        text: `Your OTP code is ${otpCode}`, // plain text body
-        html: emailtemplet(token, otpCode), // html body
+        from: `"ITI React project 👻" <${process.env.SENDEMAIL}>`, 
+        to: email, 
+        subject: "Confirm Email", 
+        text: `Your OTP code is ${otpCode}`,
+        html: emailtemplet(token, otpCode), 
       });
 
       console.log("Message sent: %s", info.messageId);

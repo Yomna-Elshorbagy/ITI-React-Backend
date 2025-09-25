@@ -9,11 +9,11 @@ export const generateToken = async ({
   const token = jwt.sign(payload, secretKey, { expiresIn });
   const expiresAt = new Date();
   expiresAt.setMonth(expiresAt.getMonth() + 1);
-  await Token.create({
-    token,
-    userId: payload._id,
-    expiresAt,
-  });
+  // await Token.create({
+  //   token,
+  //   userId: payload._id,
+  //   expiresAt,
+  // });
   return token;
 };
 

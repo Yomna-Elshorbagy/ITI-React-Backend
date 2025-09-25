@@ -9,9 +9,8 @@ export const bootstrap = (app) => {
   });
 
   dbConnection();
-  for (const [key, router] of Object.entries(allRouters)) {
-    app.use(`/api/${key}`, router);
-  }
+
+  app.use("/auth", allRouters.authRouter);
 
   app.use((req, res, next) => {
     next(new AppError(`Route Not Found ${req.originalUrl}`, 404));

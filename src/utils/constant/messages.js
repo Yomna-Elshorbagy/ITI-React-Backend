@@ -1,5 +1,5 @@
 const generateMessage = (entity) => ({
-  alreadyExisist: `${entity} already exist`,
+  alreadyExist: `${entity} already exist`,
   notFound: `${entity} not found`,
   notAllowed: `You are not allowed to ${entity}`,
   notAuthorized: `You are not authorized to ${entity}`,
@@ -10,18 +10,18 @@ const generateMessage = (entity) => ({
   failToCreate: `fail to create ${entity}`,
   failToUpdate: `fail to update ${entity}`,
   failToDelete: `fail to delete ${entity}`,
-  createdSucessfully: `${entity} created Sucessfully`,
-  updatedSucessfully: `${entity} updated Sucessfully`,
-  deletedSucessfully: `${entity} deleted Sucessfully`,
-  fetchedSuccessfully: `${entity} fetched Sucessfully`,
+  createdSuccessfully: `${entity} created Successfully`,
+  updatedSuccessfully: `${entity} updated Successfully`,
+  deletedSuccessfully: `${entity} deleted Successfully`,
+  fetchedSuccessfully: `${entity} fetched Successfully`,
 });
 
 export const messages = {
   user: {
     ...generateMessage("user"),
-    verifiedSucessfully: "account verified Sucessfully",
+    verifiedSuccessfully: "account verified Successfully",
     invalidCredential: "invalid credential",
-    logedInSucessfully: "logIn Sucessfully",
+    loggedInSuccessfully: "logIn Successfully",
     notVerified: "email Not Verified",
     hasOTP: "you already has OTP",
     expireOTP: "OTP expired",

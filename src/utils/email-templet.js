@@ -16,7 +16,7 @@ export const emailtemplet = (token, otpCode) => {
                    <table border="0" cellpadding="0" cellspacing="0" width="480" >
                        <tr>
                            <td align="center" valign="top" style="padding: 40px 10px 40px 10px;">
-                               <div style="display: block; font-family: Helvetica, Arial, sans-serif; color: #ffffff; font-size: 18px;" border="0">Graduation Project App</div>
+                               <div style="display: block; font-family: Helvetica, Arial, sans-serif; color: #ffffff; font-size: 18px;" border="0">ITI React App</div>
                            </td>
                        </tr>
                    </table>
@@ -27,7 +27,7 @@ export const emailtemplet = (token, otpCode) => {
                    <table border="0" cellpadding="0" cellspacing="0" width="480" >
                        <tr>
                            <td bgcolor="#ffffff" align="left" valign="top" style="padding: 30px 30px 20px 30px; border-radius: 4px 4px 0px 0px; color: #111111; font-family: Helvetica, Arial, sans-serif; font-size: 48px; font-weight: 400; line-height: 48px;">
-                               <h1 style="font-size: 32px; font-weight: 400; margin: 0;">Graduation project  App</h1>
+                               <h1 style="font-size: 32px; font-weight: 400; margin: 0;">ITI React App</h1>
                            </td>
                        </tr>
                    </table>
@@ -88,7 +88,7 @@ export const emailtemplet = (token, otpCode) => {
                <td bgcolor="#f4f4f4" align="center" style="padding: 0px 10px 0px 10px;"> <table border="0" cellpadding="0" cellspacing="0" width="480">
                    <tr>
                        <td bgcolor="#f4f4f4" align="left" style="padding: 30px 30px 30px 30px; color: #666666; font-family: Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 18px;" >
-                           <p style="margin: 0;">Diese E-Mail kommt von "<a href="http://localhost:3000" target="_blank" style="color: #111111; font-weight: 700;">Graduation project<a>".</p>
+                           <p style="margin: 0;">Diese E-Mail kommt von "<a href="http://localhost:3000" target="_blank" style="color: #111111; font-weight: 700;">ITI React App<a>".</p>
                        </td>
                    </tr>
                </td>
