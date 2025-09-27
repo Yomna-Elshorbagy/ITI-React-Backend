@@ -2,6 +2,7 @@ import { dbConnection } from "../../database/dbconnection.js";
 import { AppError } from "../utils/catch-error.js";
 import { globalError } from "../utils/global-error.js";
 import * as allRouters from "./index.js";
+import userRouter from './user/user.routers.js';
 
 export const bootstrap = (app) => {
   process.on("uncaughtException", (err) => {
@@ -11,6 +12,7 @@ export const bootstrap = (app) => {
   dbConnection();
 
   app.use("/auth", allRouters.authRouter);
+  app.use("/user", allRouters.userRouter);
 
   app.use((req, res, next) => {
     next(new AppError(`Route Not Found ${req.originalUrl}`, 404));
