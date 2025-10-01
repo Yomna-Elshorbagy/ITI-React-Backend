@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { roles, status } from "../../src/utils/constant/enums.js";
+import { gender, roles, status } from "../../src/utils/constant/enums.js";
 
 let userSchema = new mongoose.Schema(
   {
@@ -33,6 +33,11 @@ let userSchema = new mongoose.Schema(
       type: String,
       enum: Object.values(roles),
       default: roles.USER,
+    },
+    gender: {
+      type: String,
+      enum: Object.values(gender),
+      required: true,
     },
     isVerified: {
       type: Boolean,

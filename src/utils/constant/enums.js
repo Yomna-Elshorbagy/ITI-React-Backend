@@ -5,6 +5,10 @@ export const roles = {
 };
 Object.freeze(roles);
 
+export const gender = {
+  MALE: "male",
+  FEMALE: "female",
+};
 export const status = {
   BLOCKED: "blocked",
   PENDING: "pending",
