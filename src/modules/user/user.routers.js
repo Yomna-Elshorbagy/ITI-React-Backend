@@ -9,5 +9,6 @@ userRouter.get('/profile', auth , userController.getProfile )
 userRouter.put('/reset-pass', auth , validate(resetPassVal), userController.resetPassword )
 userRouter.put('/', auth , userController.updateUser )
 userRouter.delete('/', auth , userController.deleteUser )
+userRouter.delete('/softDelete', auth , userController.softDeleteUser )
 
 export default userRouter;

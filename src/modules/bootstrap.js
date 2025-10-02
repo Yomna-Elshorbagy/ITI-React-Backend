@@ -13,6 +13,7 @@ export const bootstrap = (app) => {
   app.use("/auth", allRouters.authRouter);
   app.use("/user", allRouters.userRouter);
   app.use("/qr", allRouters.qrRouter);
+  app.use("/categories", allRouters.categoryRouter);
 
   app.use((req, res, next) => {
     next(new AppError(`Route Not Found ${req.originalUrl}`, 404));

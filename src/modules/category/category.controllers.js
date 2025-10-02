@@ -1,0 +1,263 @@
+import Category from "../../../database/models/category.model.js";
+import Product from "../../../database/models/product.model.js";
+import { AppError, catchAsyncError } from "../../utils/catch-error.js";
+import { messages } from "../../utils/constant/messages.js";
+import { ApiFeature } from "../../utils/file-feature.js";
+import cloudinary from "../../utils/fileUpload/cloudinary.js";
+import { deleteCloud } from "../../utils/fileUpload/file-functions.js";
+
+export const addCategoryCloud = catchAsyncError(async (req, res, next) => {
+  let { name } = req.body; //distruct from req
+  name = name.toLowerCase(); //toLowerCase
+  //check file:
+  if (!req.file) {
+    return next(new AppError(messages.file.required, 400));
+  }
+  //check existance:
+  const catExist = await Category.findOne({ name }); //{}, null
+  if (catExist) {
+    return next(new AppError(messages.category.alreadyExist, 409));
+  }
+  //prepare data
+  const { secure_url, public_id } = await cloudinary.uploader.upload(
+    req.file.path,
+    {
+      folder: "ITI-REACT/category",
+    }
+  );
+  const category = new Category({
+    name,
+    image: { secure_url, public_id },
+    createdBy: req.authUser._id,
+  });
+  //sending to database
+  const newCate = await category.save(); //{} null
+  if (!newCate) {
+    await cloudinary.uploader.destroy(public_id);
+    return next(new AppError(messages.category.failToCreate, 500));
+  }
+  res.status(201).json({
+    message: messages.category.createdSuccessfully,
+    success: true,
+    data: newCate,
+  });
+});
+
+export const updateCategoryCloud = catchAsyncError(async (req, res, next) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  const userId = req.authUser._id;
+
+  // check category exist
+  const categoryExist = await Category.findById(id);
+  if (!categoryExist)
+    return next(new AppError(messages.category.notFound, 404));
+  // check name exist
+  const nameExist = await Category.findOne({ name, _id: { $ne: id } });
+  if (nameExist)
+    return next(new AppError(messages.category.alreadyExist, 404));
+
+  //prepare data
+  if (name) {
+    categoryExist.name = name;
+  }
+  //update image
+  if (req.file) {
+    //replace by override
+    const { secure_url, public_id } = await cloudinary.uploader.upload(
+      req.file.path,
+      { public_id: categoryExist.image.public_id }
+    );
+    categoryExist.image = { secure_url, public_id };
+  }
+
+  let updateCategory = await categoryExist.save();
+  if (!updateCategory) {
+    if (req.file) {
+      await cloudinary.uploader.destroy(categoryExist.image.public_id);
+    }
+    return next(new AppError(messages.category.failToUpdate, 500));
+  }
+  return res.status(200).json({
+    message: messages.category.updatedSuccessfully,
+    success: true,
+    data: updateCategory,
+  });
+});
+
+export const getCategories = catchAsyncError(async (req, res, next) => {
+  const apiFeature = new ApiFeature(
+    Category.find().populate({
+      path: "createdBy",
+      select: ["userName", "address", "userName", "mobileNumber", "image"],
+    }),
+    req.query
+  )
+    .filter()
+    .search();
+
+  const countQuery = new ApiFeature(
+    Category.find().populate({
+      path: "createdBy",
+      select: ["userName", "address", "userName", "mobileNumber", "image"],
+    }),
+    req.query
+  )
+    .filter()
+    .search();
+  const totalDocuments = await countQuery.mongooseQuery.countDocuments();
+  apiFeature.pagination().sort().select();
+
+  const category = await apiFeature.mongooseQuery;
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.size) || 10;
+  const numberOfPages = Math.ceil(totalDocuments / limit);
+
+  return res.json({
+    success: true,
+    results: category.length,
+    metadata: {
+      currentPage: page,
+      numberOfPages,
+      limit,
+      prevPage: page > 1 ? page - 1 : null,
+    },
+    category,
+  });
+});
+
+export const getSpeificCategory = catchAsyncError(async (req, res, next) => {
+  let { id } = req.params;
+  let category = await Category.findById(id).populate({
+    path: "createdBy",
+    select: ["userName", "address", "userName", "mobileNumber", "image"],
+  });
+  category || next(new AppError(messages.category.notFound, 404));
+  !category ||
+    res.status(200).json({ message: "Category is : ", data: category });
+});
+
+export const getAllCategories = catchAsyncError(async (req, res, next) => {
+  const categories = await Category.find().populate({
+    path: "createdBy",
+    select: ["userName", "address", "userName", "mobileNumber", "image"],
+  });
+  res.status(200).json({ message: "Categories are : ", data: categories });
+});
+
+export const deleteCategoryCloud = catchAsyncError(async (req, res, next) => {
+  const { id } = req.params;
+  let categoryExist = await Category.findByIdAndDelete(id);
+  if (!categoryExist)
+    return next(new AppError(messages.category.notFound, 404));
+
+  //prepare ids
+  const products = await Product.find({ category: id }).select(
+    "imageCover subImages"
+  );
+  const imagePaths = [];
+  const productIds = [];
+  products.forEach((prod) => {
+    imagePaths.push(prod.imageCover);
+    imagePaths.push(...prod.subImages);
+    productIds.push(prod._id);
+  });
+  await Product.deleteMany({ _id: { $in: productIds } });
+
+  for (let i = 0; i < imagePaths.length; i++) {
+    if (typeof (imagePaths[i] === "string")) {
+      deleteCloud(imagePaths[i]);
+    } else {
+      await cloudinary.uploader.destroy(imagePaths[i].public_id);
+    }
+  }
+  await cloudinary.uploader.destroy(categoryExist.image.public_id);
+
+  res.status(200).json({
+    message: messages.category.deletedSuccessfully,
+    success: true,
+  });
+});
+
+export const getProductsByCategoryId = catchAsyncError(
+  async (req, res, next) => {
+    const { id } = req.params;
+    const baseQuery = Product.find({ category: id }).populate(
+      "createdBy",
+      "userName"
+    );
+    const totalProducts = await Product.countDocuments({ category: id });
+
+    const apiFeature = new ApiFeature(baseQuery, req.query)
+      .filter()
+      .search()
+      .pagination()
+      .sort()
+      .select();
+
+    const products = await apiFeature.mongooseQuery;
+    const currentPage = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const numberOfPages = Math.ceil(totalProducts / limit);
+    const prevPage = currentPage > 1 ? currentPage - 1 : null;
+    const nextPage = currentPage < numberOfPages ? currentPage + 1 : null;
+
+    res.status(200).json({
+      success: true,
+      results: products.length,
+      data: products,
+      metadata: {
+        currentPage,
+        numberOfPages,
+        limit,
+        prevPage,
+        nextPage,
+      },
+    });
+  }
+);
+
+export const getTrendingCategories = catchAsyncError(async (req, res, next) => {
+  const topCategories = await Product.aggregate([
+    { $group: { _id: "$category", count: { $sum: 1 } } },
+    { $sort: { count: -1 } },
+    { $limit: 5 },
+    {
+      $lookup: {
+        from: "categories",
+        localField: "_id",
+        foreignField: "_id",
+        as: "category",
+      },
+    },
+    { $unwind: "$category" },
+  ]);
+
+  res.status(200).json({
+    success: true,
+    data: topCategories,
+  });
+});
+
+export const getCategoryStats = catchAsyncError(async (req, res, next) => {
+  const totalCategories = await Category.countDocuments();
+  const latest = await Category.find().sort({ createdAt: -1 }).limit(1);
+  const productsPerCategory = await Product.aggregate([
+    {
+      $group: {
+        _id: "$category",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      totalCategories,
+      latest,
+      productsPerCategory,
+    },
+  });
+});
