@@ -19,7 +19,7 @@ export const generateToken = async ({
 
 export const verifyToken = async ({
   token,
-  secretKey = process.env.SECRET_KEY,
+  secretKey = process.env.EMAIL_KEY,
 }) => {
   try {
     const decoded = jwt.verify(token, secretKey);

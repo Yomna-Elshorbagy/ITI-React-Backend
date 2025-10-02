@@ -36,9 +36,9 @@ export const auth = catchAsyncError(async (req, res, next) => {
     return next(new AppError("please signUp first", 401));
   }
 
-  let time = parseInt(user.passwordChangedAt.getTime() / 1000);
-  if (time > result.iat)
-    return next(new AppError("invalid token please login..", 401));
+  // let time = parseInt(user.passwordChangedAt.getTime() / 1000);
+  // if (time > result.iat)
+  //   return next(new AppError("invalid token please login..", 401));
 
   req.authUser = user;
   next();

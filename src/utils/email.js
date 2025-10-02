@@ -11,8 +11,8 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export const sendEmail = async (_id , email, otpCode ) => {
-  const token = await generateToken({ payload: { _id, email }, secretKey: process.env.EMAIL_KEY });
+export const sendEmail = async (_id , email, role,  otpCode ) => {
+  const token = await generateToken({ payload: { _id, email , role}, secretKey: process.env.EMAIL_KEY });
 
       // send mail with defined transport object
       const info = await transporter.sendMail({

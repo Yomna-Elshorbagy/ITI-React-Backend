@@ -72,7 +72,7 @@ export const emailtemplet = (token, otpCode) => {
                                            <table border="0" cellspacing="0" cellpadding="0">
                                                <tr>
                                                    <td align="left" style="border-radius: 3px;" bgcolor="#426899">
-                                                       <a href="http://localhost:3000/user/verify/${token}" target="_blank" style="font-size: 20px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; color: #ffffff; text-decoration: none; padding: 11px 22px; border-radius: 2px; border: 1px solid #426899; display: inline-block;">Verify</a>
+                                                       <a href="http://localhost:3000/auth/verify/${encodeURIComponent(token)}" target="_blank" style="font-size: 20px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; color: #ffffff; text-decoration: none; padding: 11px 22px; border-radius: 2px; border: 1px solid #426899; display: inline-block;">Verify</a>
                                                    </td>
                                                </tr>
                                            </table>

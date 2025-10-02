@@ -57,17 +57,23 @@ export const signup = catchAsyncError(async (req, res, next) => {
     payload: {
       _id: createdUser._id,
       email: createdUser.email,
-      password: createdUser.password,
+      role: createdUser.role,
     },
     secretKey: process.env.EMAIL_KEY,
   });
   await Token.create({
     token,
     userId: createdUser._id,
-    expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    expiresAt: new Date(Date.now()  + 30 * 24 * 60 * 60 * 1000),
   });
   createdUser.password = undefined;
-  await sendEmail(createdUser._id, email, otpCode);
+  await sendEmail(
+    createdUser._id,
+    createdUser.email,
+    createdUser.role,
+    otpCode
+  );
+
   return res.status(201).json({
     message: messages.user.createdSuccessfully,
     success: true,
@@ -79,9 +85,10 @@ export const signup = catchAsyncError(async (req, res, next) => {
 export const verifyAccount = catchAsyncError(async (req, res, next) => {
   const { token } = req.params;
   const decoded = await verifyToken({
-    token,
+    token: decodeURIComponent(req.params.token),
     secretKey: process.env.EMAIL_KEY,
   });
+
   if (!decoded || !decoded._id) {
     return next(new AppError("Invalid Token or Signature...", 401));
   }
@@ -165,6 +172,11 @@ export const logIn = catchAsyncError(async (req, res, next) => {
       role: userExist.role,
     },
   });
+  await Token.create({
+    token: accessToken,
+    userId: userExist._id,
+    expiresAt: new Date(Date.now()  + 30 * 24 * 60 * 60 * 1000), 
+  });
   res.json({
     message: messages.user.loggedInSuccessfully,
     success: true,
@@ -227,7 +239,7 @@ export const changePassword = catchAsyncError(async (req, res, next) => {
 export const logout = catchAsyncError(async (req, res, next) => {
   const { _id } = req.authUser;
   //   const token = req.headers.authentication.split(" ")[1];
-  const authHeader = req.headers.authorization;
+  const authHeader = req.headers.authentication;
   if (!authHeader) return next(new AppError("No token provided", 401));
 
   const token = authHeader.split(" ")[1];
