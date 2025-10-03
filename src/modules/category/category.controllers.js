@@ -54,8 +54,7 @@ export const updateCategoryCloud = catchAsyncError(async (req, res, next) => {
     return next(new AppError(messages.category.notFound, 404));
   // check name exist
   const nameExist = await Category.findOne({ name, _id: { $ne: id } });
-  if (nameExist)
-    return next(new AppError(messages.category.alreadyExist, 404));
+  if (nameExist) return next(new AppError(messages.category.alreadyExist, 404));
 
   //prepare data
   if (name) {
@@ -127,7 +126,7 @@ export const getCategories = catchAsyncError(async (req, res, next) => {
   });
 });
 
-export const getSpeificCategory = catchAsyncError(async (req, res, next) => {
+export const getSpecificCategory = catchAsyncError(async (req, res, next) => {
   let { id } = req.params;
   let category = await Category.findById(id).populate({
     path: "createdBy",
@@ -218,10 +217,13 @@ export const getProductsByCategoryId = catchAsyncError(
   }
 );
 
+//===> if there is dashboard we can use these apis:
+//===> depending on category that have more products
 export const getTrendingCategories = catchAsyncError(async (req, res, next) => {
   const topCategories = await Product.aggregate([
+    //==> group products by category and count them
     { $group: { _id: "$category", count: { $sum: 1 } } },
-    { $sort: { count: -1 } },
+    { $sort: { count: -1 } }, //==> sort descending
     { $limit: 5 },
     {
       $lookup: {
@@ -240,6 +242,7 @@ export const getTrendingCategories = catchAsyncError(async (req, res, next) => {
   });
 });
 
+// ==> indicates: how many categories exist - Which category was added most recently - how many products belong to each category.
 export const getCategoryStats = catchAsyncError(async (req, res, next) => {
   const totalCategories = await Category.countDocuments();
   const latest = await Category.find().sort({ createdAt: -1 }).limit(1);

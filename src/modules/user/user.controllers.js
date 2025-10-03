@@ -9,6 +9,15 @@ export const getProfile = catchAsyncError(async (req, res, next) => {
   return res.status(200).json({ message: req.authUser });
 });
 
+export const getAllUsers = catchAsyncError(async (req, res, next) => {
+  const users = await User.find();
+  res.status(200).json({
+    success: true,
+    message: messages.user.fetchedSuccessfully,
+    data: users,
+  });
+});
+
 export const resetPassword = catchAsyncError(async (req, res, next) => {
   const { oldPassword, newPassword, Cpassword } = req.body;
   const userId = req.authUser._id;

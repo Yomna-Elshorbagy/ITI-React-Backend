@@ -11,14 +11,14 @@ const categoryRouter = Router();
 categoryRouter.post(
   "/addCategory",
   auth,
-  isAuthorized([roles.USER, roles.ADMIN, roles.VISITOR]),
+  isAuthorized([roles.ADMIN]),
   uploadSingleFile("image"),
   validate(addCategoryVal),
   categoryControllers.addCategoryCloud
 );
 
 categoryRouter.get("/", categoryControllers.getAllCategories);
-categoryRouter.get("/getcategories", categoryControllers.getCategories);
+categoryRouter.get("/getCategories", categoryControllers.getCategories);
 categoryRouter.get(
   "/:id/products",
   categoryControllers.getProductsByCategoryId
@@ -31,18 +31,13 @@ categoryRouter.get("/analytics/stats", categoryControllers.getCategoryStats);
 
 categoryRouter
   .route("/:id")
-  .get(categoryControllers.getSpeificCategory)
+  .get(categoryControllers.getSpecificCategory)
   .put(
     auth,
-    isAuthorized([roles.USER, roles.ADMIN, roles.VISITOR]),
     uploadSingleFile("image", "categories"),
     validate(updateCategoryVal),
     categoryControllers.updateCategoryCloud
   )
-  .delete(
-    auth,
-    isAuthorized([roles.ADMIN]),
-    categoryControllers.deleteCategoryCloud
-  );
+  .delete(auth, categoryControllers.deleteCategoryCloud);
 
 export default categoryRouter;
