@@ -6,12 +6,12 @@ Here’s the flow you should expect:
 
 - The user signs up and logs in normally (email + password).
 - On their dashboard, they request a login QR code.
-- Your API `/login-generate` generates a short-lived JWT (type: `qr-login`) containing the `userId`.
+- my API `/login-generate` generates a short-lived JWT (type: `qr-login`) containing the `userId`.
 - That QR is displayed.
 
 ## Step 2️⃣: User scans QR from Device B (other device)
 
-- Device B (maybe your React app on another PC/phone) scans the QR.
+- Device B (maybe our React app on another PC/phone) scans the QR.
 - It extracts the token from the QR code link.
 - Device B sends a `POST /login-validate` request with `{ token }`.
 
@@ -36,7 +36,7 @@ Here’s the flow you should expect:
 
 ```
 GET http://localhost:3000/qr/login-generate
-Headers: Authorization: Bearer <user_access_token>
+Headers: authentication: bearer <user_access_token>
 ```
 
 **Response:**
@@ -45,7 +45,7 @@ Headers: Authorization: Bearer <user_access_token>
 {
   "success": true,
   "qrCode": "data:image/png;base64,...",
-  "expiresIn": "5m"
+  "expiresIn": "1h"
 }
 ```
 

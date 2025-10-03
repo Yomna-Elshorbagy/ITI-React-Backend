@@ -25,6 +25,7 @@ const mobileNumberPattern = /^01[01245]\d{8}$/;
 
 export const generalFields = {
   name: joi.string(),
+  title: joi.string(),
   comment: joi.string(),
   description: joi.string().min(20).max(2000),
   rate: joi.number().positive().min(0).max(5),

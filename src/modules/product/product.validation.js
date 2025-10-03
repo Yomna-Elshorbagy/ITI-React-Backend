@@ -3,7 +3,7 @@ import { generalFields } from "../../middelwares/validate.js";
 
 export const addProductVal = joi
   .object({
-    title: generalFields.name.required(),
+    title: generalFields.title.required(),
     description: generalFields.description.required(),
     category: generalFields.objectId.required(),
     price: generalFields.price.required(),

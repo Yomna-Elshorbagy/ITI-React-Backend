@@ -186,7 +186,22 @@ export const getAllProducts = catchAsyncError(async (req, res, next) => {
   res.status(200).json({ success: true, message: "Products are : ", Products });
 });
 
-// api feature
+export const getSpeCificProduct = catchAsyncError(async (req, res, next) => {
+  let { id } = req.params;
+  let product = await Product.findById(id)
+    .populate({
+      path: "createdBy",
+      select: ["address", "userName", "mobileNumber"],
+    })
+    .populate({
+      path: "category",
+      select: ["name", "slug", "image", "createdBy"],
+    });
+  if (!product) return next(new AppError(messages.product.notFound, 404));
+  res.status(200).json({ message: "Product is : ", data: product });
+});
+
+//===> get products but with api feature
 export const getProducts = catchAsyncError(async (req, res, next) => {
   const { category, page = 1, size = 10 } = req.query;
 
@@ -243,17 +258,55 @@ export const getProducts = catchAsyncError(async (req, res, next) => {
   });
 });
 
-export const getSpeCificProduct = catchAsyncError(async (req, res, next) => {
-  let { id } = req.params;
-  let product = await Product.findById(id)
-    .populate({
-      path: "createdBy",
-      select: ["address", "userName", "mobileNumber"],
-    })
-    .populate({
-      path: "category",
-      select: ["name", "slug", "image", "createdBy"],
-    });
+//===> get products from same categories to display it
+export const getRelatedProducts = catchAsyncError(async (req, res, next) => {
+  const { productId } = req.params;
+
+  const product = await Product.findById(productId);
   if (!product) return next(new AppError(messages.product.notFound, 404));
-  res.status(200).json({ message: "Product is : ", data: product });
+
+  const relatedProducts = await Product.find({
+    category: product.category,
+    _id: { $ne: productId }, // exclude the current one
+  }).limit(10);
+
+  res.status(200).json({ success: true, relatedProducts });
+});
+
+//===> sorts the products in descending order of their views with limit 10 products
+export const getTrendingProducts = catchAsyncError(async (req, res, next) => {
+  const trendingProducts = await Product.find().sort({ views: -1 }).limit(10);
+  res.status(200).json({ success: true, trendingProducts });
+});
+
+export const subscribeToPriceDrop = catchAsyncError(async (req, res, next) => {
+  const { productId } = req.params;
+  const { _id: authUserId } = req.authUser;
+
+  const product = await Product.findById(productId);
+  if (!product) return next(new AppError("Product not found", 404));
+
+  const existingAlert = await PriceAlert.findOne({
+    user: authUserId,
+    product: productId,
+  });
+  if (existingAlert) {
+    return res.status(400).json({
+      success: false,
+      message: "You are already subscribed to this product's price alerts.",
+    });
+  }
+
+  const newSubscription = await PriceAlert.create({
+    user: authUserId,
+    product: productId,
+    subscribedPrice: product.price,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Subscribed for price drop alerts successfully!",
+    subscribedPrice: product.price,
+    data: newSubscription,
+  });
 });

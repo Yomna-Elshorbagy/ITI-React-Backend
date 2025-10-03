@@ -6,7 +6,7 @@ let productSchema = mongoose.Schema(
     title: {
       type: String,
       trim: true,
-      unique: [true, "Product name is required"],
+      unique: [true, "Product title already exist"],
       minlength: [2, "too short Product name"],
     },
 

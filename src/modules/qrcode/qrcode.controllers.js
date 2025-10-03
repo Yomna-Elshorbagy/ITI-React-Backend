@@ -11,7 +11,7 @@ export const generateQr = catchAsyncError(async (req, res, next) => {
     const token = jwt.sign(
       { type: "qr", user: req.authUser?._id || null },
       process.env.SECRET_KEY,
-      { expiresIn: "5m" }
+      { expiresIn: "1h" }
     );
 
     // react home page URL with token
@@ -23,7 +23,7 @@ export const generateQr = catchAsyncError(async (req, res, next) => {
     res.status(200).json({
       success: true,
       qrCode: qrCodeDataUrl,
-      expiresIn: "5m",
+      expiresIn: "1h",
     });
   } catch (err) {
     next(new AppError(err.message, 500));
@@ -46,13 +46,13 @@ export const generateLoginQr = catchAsyncError(async (req, res, next) => {
     const token = jwt.sign(
       { type: "qr-login", userId: req.authUser._id },
       process.env.SECRET_KEY,
-      { expiresIn: "5m" }
+      { expiresIn: "1h" }
     );
 
     const url = `${process.env.FRONTEND_URL}/qr-login?token=${token}`;
     const qrCode = await QRCode.toDataURL(url);
 
-    res.status(200).json({ success: true, qrCode, expiresIn: "5m" });
+    res.status(200).json({ success: true, qrCode, expiresIn: "1h" });
   } catch (err) {
     next(new AppError(err.message, 500));
   }
