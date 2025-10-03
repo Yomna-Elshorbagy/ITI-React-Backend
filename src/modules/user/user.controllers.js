@@ -122,3 +122,111 @@ export const softDeleteUser = catchAsyncError(async (req, res, next) => {
     data: softDeletedUser,
   });
 });
+
+//====> analysis needed for user for dashboards
+//==> 1- total user overview
+export const getUsersOverview = catchAsyncError(async (req, res, next) => {
+  const overview = await User.aggregate([
+    {
+      $group: {
+        _id: "$status",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const totalUsers = await User.countDocuments();
+  //==> convert aggregation result into object
+  const counts = overview.reduce((acc, curr) => {
+    acc[curr._id] = curr.count;
+    return acc;
+  }, {});
+
+  res.status(200).json({
+    success: true,
+    data: {
+      totalUsers,
+      pendingUsers: counts[status.PENDING] || 0,
+      verifiedUsers: counts[status.VERIFIED] || 0,
+      blockedUsers: counts[status.BLOCKED] || 0,
+      deletedUsers: counts[status.DELETED] || 0,
+    },
+  });
+});
+//===> 2- active and deActive users analysis
+export const getDeletedUsersAnalysis = catchAsyncError(
+  async (req, res, next) => {
+    const deletedUsersHistory = await User.aggregate([
+      { $match: { status: status.DELETED } },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$updatedAt" } },
+          count: { $sum: 1 },
+          users: {
+            $push: { _id: "$_id", email: "$email", userName: "$userName" },
+          },
+        },
+      },
+      { $sort: { _id: -1 } },
+    ]);
+
+    const softDeletedCount = await User.countDocuments({
+      status: status.DELETED,
+    });
+    const totalUsers = await User.countDocuments();
+
+    res.status(200).json({
+      success: true,
+      totalUsers,
+      totalSoftDeleted: softDeletedCount,
+      history: deletedUsersHistory,
+    });
+  }
+);
+//===> 3- analysis for gender - age - role
+export const getDemographics = catchAsyncError(async (req, res, next) => {
+  const now = new Date();
+  const demographics = await User.aggregate([
+    {
+      $facet: {
+        gender: [{ $group: { _id: "$gender", count: { $sum: 1 } } }],
+        roles: [{ $group: { _id: "$role", count: { $sum: 1 } } }],
+        ages: [
+          {
+            $project: {
+              age: {
+                $dateDiff: {
+                  startDate: "$DOB",
+                  endDate: now,
+                  unit: "year",
+                },
+              },
+            },
+          },
+          {
+            $bucket: {
+              groupBy: "$age",
+              boundaries: [0, 18, 25, 35, 45, 60, 150],
+              default: "unknown",
+              output: { count: { $sum: 1 } },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  const result = demographics[0];
+
+  res.status(200).json({
+    success: true,
+    data: {
+      gender: result.gender.reduce((a, b) => ({ ...a, [b._id]: b.count }), {}),
+      roles: result.roles.reduce((a, b) => ({ ...a, [b._id]: b.count }), {}),
+      ageGroups: result.ages.map((a) => ({
+        range: a._id,
+        count: a.count,
+      })),
+    },
+  });
+});

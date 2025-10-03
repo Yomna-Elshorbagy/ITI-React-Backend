@@ -7,6 +7,16 @@ const userRouter = Router();
 
 userRouter.get("/profile", auth, userController.getProfile);
 userRouter.get("/allUsers", auth, userController.getAllUsers);
+
+// ===> Analysis routes for dashboard
+userRouter.get("/analysis/overview", auth, userController.getUsersOverview);
+userRouter.get(
+  "/analysis/deleted",
+  auth,
+  userController.getDeletedUsersAnalysis
+);
+userRouter.get("/analysis/demographics", auth, userController.getDemographics);
+
 userRouter.put(
   "/reset-pass",
   auth,
