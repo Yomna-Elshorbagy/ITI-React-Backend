@@ -96,16 +96,18 @@ export const getCategories = catchAsyncError(async (req, res, next) => {
     .search();
 
   const countQuery = new ApiFeature(
-    Category.find().populate({
-      path: "createdBy",
-      select: ["userName", "address", "userName", "mobileNumber", "image"],
-    }),
+    Category.find()
+      .select("name image createdBy createdAt")
+      .populate({
+        path: "createdBy",
+        select: ["userName", "address", "userName", "mobileNumber", "image"],
+      }),
     req.query
   )
     .filter()
     .search();
   const totalDocuments = await countQuery.mongooseQuery.countDocuments();
-  apiFeature.pagination().sort().select();
+  apiFeature.pagination().sort();
 
   const category = await apiFeature.mongooseQuery;
 

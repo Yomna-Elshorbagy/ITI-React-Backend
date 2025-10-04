@@ -17,6 +17,12 @@ export const status = {
 };
 Object.freeze(status);
 
+export const couponTypes = {
+  FIXED_AMOUNT: "fixedAmount",
+  PERCENTAGE: "percentage",
+};
+Object.freeze(couponTypes);
+
 export const orderStatus = {
   PLACED: "placed",
   SHIPPING: "shipping",
