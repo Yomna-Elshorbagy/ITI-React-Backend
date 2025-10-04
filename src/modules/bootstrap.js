@@ -15,6 +15,7 @@ export const bootstrap = (app) => {
   app.use("/qr", allRouters.qrRouter);
   app.use("/categories", allRouters.categoryRouter);
   app.use("/products", allRouters.productRouter);
+  app.use("/reviews", allRouters.reviewRouter);
 
   app.use((req, res, next) => {
     next(new AppError(`Route Not Found ${req.originalUrl}`, 404));

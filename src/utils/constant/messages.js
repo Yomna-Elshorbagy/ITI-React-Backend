@@ -30,6 +30,7 @@ export const messages = {
   },
   password: generateMessage("password"),
   category: generateMessage("category"),
+  review: generateMessage("review"),
   file: { required: "file is required" },
   product: { ...generateMessage("product"), outStock: "Out Of Stock" },
   wishlist: { ...generateMessage("wishlist") },
