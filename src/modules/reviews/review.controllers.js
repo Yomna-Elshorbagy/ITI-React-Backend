@@ -101,7 +101,7 @@ export const deleteReview = catchAsyncError(async (req, res, next) => {
   const productId = reviewExist.product;
   await Review.deleteOne({ _id: id });
   // delete the rate from avg
-  const ratings = await Review.find({ product: id }).select("rate");
+  const ratings = await Review.find({ product: productId }).select("rate");
   let avgRating =
     ratings.length > 0
       ? ratings.reduce(

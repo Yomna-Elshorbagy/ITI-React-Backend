@@ -95,5 +95,15 @@ productSchema.pre("save", async function (next) {
   next();
 });
 
+//==> get Reviews for specific product with virtual populate
+productSchema.virtual("Reviews", {
+  ref: "Review",
+  localField: "_id",
+  foreignField: "product",
+});
+productSchema.pre("findOne", function () {
+  this.populate("Reviews");
+});
+
 let Product = mongoose.model("Product", productSchema);
 export default Product;
