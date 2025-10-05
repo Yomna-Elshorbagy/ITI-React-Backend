@@ -12,61 +12,8 @@ const calcTotalPrice = (items) => {
 const calcNoOfItems = (items) => {
   return items.products.reduce((acc, item) => acc + item.quantity, 0);
 };
-// export const addToCart = catchAsyncError(async (req, res, next) => {
-//   //get data from req
-//   let { productId, quantity = 1 } = req.body;
 
-//   //check existence
-//   const productExist = await Product.findById(productId);
-//   if (!productExist) return next(new AppError(messages.product.notFound, 404));
-
-//   //check stock
-//   if (!productExist.instock(quantity)) {
-//     return next(new AppError(messages.product.outStock, 404));
-//   }
-//   // check cart
-//   const userCart = await Cart.findOneAndUpdate(
-//     {
-//       user: req.authUser._id,
-//       "products.productId": productId, //search productId in array of products
-//     },
-//     {
-//       $set: { "products.$.price": productExist.price },
-//       $inc: { "products.$.quantity": quantity }, //$ this for updating this product quantity
-//     },
-//     {
-//       new: true,
-//     }
-//   );
-//   // let data = userCart;
-//   let message = messages.cart.updatedSuccessfully;
-
-//   if (!userCart) {
-//     await Cart.findOneAndUpdate(
-//       { user: req.authUser._id },
-//       {
-//         $push: {
-//           products: { productId, quantity, price: productExist.price },
-//         },
-//       },
-//       { new: true, upsert: true } // Create the cart if it doesn't exist
-//     );
-//     message = messages.cart.createdSuccessfully;
-//   }
-
-//   // to calculate total price
-//   let cartWithDetails = await Cart.findOne({ user: req.authUser._id });
-//   // .populate({ path: "products.productId", select: "price" });
-//   calcTotalPrice(cartWithDetails);
-//   await cartWithDetails.save();
-//   const noOfCartItems = calcNoOfItems(cartWithDetails);
-
-//   return res
-//     .status(200)
-//     .json({ message, success: true, noOfCartItems, cart: cartWithDetails });
-// });
-
-// ===> handel cart according to need in react project so  : 
+// ===> handel cart according to need in react project so  :
 export const addToCart = catchAsyncError(async (req, res, next) => {
   const { productId, quantity = 1 } = req.body;
 
@@ -174,7 +121,14 @@ export const deleteFromCart = catchAsyncError(async (req, res, next) => {
 });
 
 export const viewCart = catchAsyncError(async (req, res, next) => {
-  const userCart = await Cart.findOne({ user: req.authUser._id });
+  const userCart = await Cart.findOne({ user: req.authUser._id }).populate({
+    path: "products.productId",
+    select: "title imageCover price discount finalPrice stock category",
+    populate: {
+      path: "category",
+      select: "name image", 
+    },
+  });
 
   if (!userCart) {
     return next(new AppError(messages.cart.notFound, 404));
