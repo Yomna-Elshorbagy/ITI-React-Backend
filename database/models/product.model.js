@@ -74,8 +74,8 @@ productSchema.virtual("finalPrice").get(function () {
   return this.price - this.price * ((this.discount || 0) / 100);
 });
 
-productSchema.methods.instock = function (quentity) {
-  return this.stock >= quentity ? true : false;
+productSchema.methods.instock = function (quantity) {
+  return this.stock >= quantity ? true : false;
 };
 
 productSchema.pre("save", async function (next) {
