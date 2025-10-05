@@ -22,7 +22,7 @@ productRouter
     productControllers.addProduct
   )
   .get(productControllers.getAllProducts);
-
+productRouter.get("/trending", productControllers.getTrendingProducts);
 productRouter.get("/lowstock", productControllers.getLowStock);
 
 productRouter
@@ -37,6 +37,7 @@ productRouter
     ]),
     productControllers.updateProductCloud
   );
+productRouter.get("/related/:productId", productControllers.getRelatedProducts);
 productRouter.delete(
   "/:id",
   auth,
