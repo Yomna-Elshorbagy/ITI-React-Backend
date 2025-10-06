@@ -183,9 +183,14 @@ export const updateQuantity = catchAsyncError(async (req, res, next) => {
   item.quantity = quantity;
   calcTotalPrice(cart);
   await cart.save();
+  const noOfCartItems = calcNoOfItems(cart);
+  const noOfProducts = calcNoOfProducts(cart);
+
   return res.status(200).json({
     success: true,
     message: messages.cart.updatedSuccessfully,
+    noOfCartItems,
+    noOfProducts,
     data: cart,
   });
 });
