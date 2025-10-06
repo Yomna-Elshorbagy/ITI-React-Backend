@@ -9,6 +9,9 @@ const calcTotalPrice = (items) => {
     0
   );
 };
+const calcNoOfProducts = (items) => {
+  return items.products.length;
+};
 const calcNoOfItems = (items) => {
   return items.products.reduce((acc, item) => acc + item.quantity, 0);
 };
@@ -42,6 +45,7 @@ export const addToCart = catchAsyncError(async (req, res, next) => {
       message: messages.cart.createdSuccessfully,
       success: true,
       noOfCartItems: calcNoOfItems(cart),
+      calcNoOfProducts: calcNoOfProducts(cart),
       cart,
     });
   }
@@ -79,6 +83,7 @@ export const addToCart = catchAsyncError(async (req, res, next) => {
   await cart.save();
 
   const noOfCartItems = calcNoOfItems(cart);
+  const noOfProducts = calcNoOfProducts(cart);
 
   res.status(200).json({
     message: productInCart
@@ -86,6 +91,7 @@ export const addToCart = catchAsyncError(async (req, res, next) => {
       : messages.cart.createdSuccessfully,
     success: true,
     noOfCartItems,
+    noOfProducts,
     cart,
   });
 });
@@ -126,7 +132,7 @@ export const viewCart = catchAsyncError(async (req, res, next) => {
     select: "title imageCover price discount finalPrice stock category",
     populate: {
       path: "category",
-      select: "name image", 
+      select: "name image",
     },
   });
 
@@ -134,11 +140,13 @@ export const viewCart = catchAsyncError(async (req, res, next) => {
     return next(new AppError(messages.cart.notFound, 404));
   }
   const noOfCartItems = calcNoOfItems(userCart);
+  const noOfProducts = calcNoOfProducts(userCart);
 
   return res.status(200).json({
     message: "Cart retrieved successfully",
     success: true,
     noOfCartItems,
+    noOfProducts,
     data: userCart,
   });
 });
