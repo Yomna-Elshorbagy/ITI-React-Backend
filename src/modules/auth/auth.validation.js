@@ -9,7 +9,6 @@ export const signUpVal = joi
     Cpassword: generalFields.Cpassword.required(),
     mobileNumber: generalFields.mobileNumber.required(),
     recoveryEmail: generalFields.email.required(),
-    DOB: joi.date(),
     gender: joi.string(),
   })
   .required();

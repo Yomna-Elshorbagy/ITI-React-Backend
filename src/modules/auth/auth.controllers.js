@@ -19,7 +19,6 @@ export const signup = catchAsyncError(async (req, res, next) => {
     gender,
     recoveryEmail,
     mobileNumber,
-    DOB,
   } = req.body;
   //check existing
   const userExisting = await User.findOne({
@@ -44,7 +43,6 @@ export const signup = catchAsyncError(async (req, res, next) => {
     gender,
     recoveryEmail,
     mobileNumber,
-    DOB,
     otpCode,
     otpExpire,
     passwordChangedAt: Date.now(),
