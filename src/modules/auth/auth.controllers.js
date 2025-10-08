@@ -229,9 +229,23 @@ export const changePassword = catchAsyncError(async (req, res, next) => {
   );
   await Token.updateMany({ userId: user._id }, { isValid: false });
 
+  const accessToken = await generateToken({
+    payload: {
+      _id: user._id,
+      email: user.email,
+      role: user.role,
+    },
+  });
+
+  await Token.create({
+    token: accessToken,
+    userId: user._id,
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+  });
+  
   return res
     .status(200)
-    .json({ message: messages.password.updatedSuccessfully, success: true });
+    .json({ message: messages.password.updatedSuccessfully, success: true , accessToken});
 });
 
 export const logout = catchAsyncError(async (req, res, next) => {
