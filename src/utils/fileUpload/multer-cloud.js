@@ -43,7 +43,7 @@ export const cloudUpload = (allowFile = fileValidation.images) => {
     storage,
     fileFilter,
     limits: {
-      fieldSize: 10 * 1024 * 1024,
+      fieldSize: 50 * 1024 * 1024,
     },
   });
   return upload;

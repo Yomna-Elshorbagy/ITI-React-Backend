@@ -8,6 +8,7 @@ import Cart from "../../../database/models/cart.model.js";
 import { generateOTP } from "../../utils/otp.js";
 import Token from "../../../database/models/token.model.js";
 import { AppError, catchAsyncError } from "../../utils/catch-error.js";
+import { verifyGoogleToken } from "../../utils/oAuth/googleAuth.js";
 
 export const signup = catchAsyncError(async (req, res, next) => {
   //get data from req
@@ -268,5 +269,51 @@ export const logout = catchAsyncError(async (req, res, next) => {
   res.status(200).json({
     message: messages.user.loggedOutSuccessfully,
     success: true,
+  });
+});
+
+export const googleLogin = catchAsyncError(async (req, res, next) => {
+  const { idToken } = req.body; 
+
+  const googleUser = await verifyGoogleToken(idToken);
+  if (!googleUser || !googleUser.email_verified) {
+    return next(new AppError("Invalid Google token", 401));
+  }
+
+  let user = await User.findOne({ email: googleUser.email });
+
+  if (!user) {
+    user = await User.create({
+      userName: googleUser.name,
+      email: googleUser.email,
+      password: null, 
+      isVerified: true,
+      status: status.VERIFIED,
+      authProvider: "google",
+      profileImage: googleUser.picture,
+    });
+
+    await Cart.create({ user: user._id, products: [] });
+  }
+
+  const accessToken = await generateToken({
+    payload: {
+      _id: user._id,
+      email: user.email,
+      role: user.role,
+    },
+  });
+
+  await Token.create({
+    token: accessToken,
+    userId: user._id,
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+  });
+
+  res.status(200).json({
+    message: "Logged in successfully with Google",
+    success: true,
+    accessToken,
+    user,
   });
 });
