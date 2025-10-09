@@ -17,6 +17,7 @@ export const bootstrap = (app) => {
   app.use("/products", allRouters.productRouter);
   app.use("/reviews", allRouters.reviewRouter);
   app.use("/coupons", allRouters.couponRouter);
+  app.use("/wishlist", allRouters.wishlistRouter);
   app.use("/cart", allRouters.cartRouter);
 
   app.use((req, res, next) => {

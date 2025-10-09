@@ -14,6 +14,7 @@ const generateMessage = (entity) => ({
   updatedSuccessfully: `${entity} updated Successfully`,
   deletedSuccessfully: `${entity} deleted Successfully`,
   fetchedSuccessfully: `${entity} fetched Successfully`,
+  clearedSuccessfully:`${entity} Cleared Successfully`
 });
 
 export const messages = {
