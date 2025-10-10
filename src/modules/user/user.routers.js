@@ -3,6 +3,7 @@ import * as userController from "./user.controllers.js";
 import { auth } from "../../middelwares/auth.js";
 import { validate } from "../../middelwares/validate.js";
 import { resetPassVal } from "./user.validation.js";
+import { uploadSingleFile } from "../../utils/fileUpload/multer-cloud.js";
 const userRouter = Router();
 
 userRouter.get("/profile", auth, userController.getProfile);
@@ -23,7 +24,12 @@ userRouter.put(
   validate(resetPassVal),
   userController.resetPassword
 );
-userRouter.put("/", auth, userController.updateUser);
+userRouter.put(
+  "/",
+  auth,
+  uploadSingleFile("image", "users"),
+  userController.updateUser
+);
 userRouter.delete("/", auth, userController.deleteUser);
 userRouter.delete("/softDelete", auth, userController.softDeleteUser);
 

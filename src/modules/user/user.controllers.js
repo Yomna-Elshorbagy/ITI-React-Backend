@@ -3,6 +3,8 @@ import User from "../../../database/models/user.model.js";
 import { AppError, catchAsyncError } from "../../utils/catch-error.js";
 import { status } from "../../utils/constant/enums.js";
 import { messages } from "../../utils/constant/messages.js";
+import cloudinary from "../../utils/fileUpload/cloudinary.js";
+import { deleteCloud } from "../../utils/fileUpload/file-functions.js";
 import { comparePass, hashedPass } from "../../utils/hash-compare.js";
 
 export const getProfile = catchAsyncError(async (req, res, next) => {
@@ -53,34 +55,103 @@ export const resetPassword = catchAsyncError(async (req, res, next) => {
   });
 });
 
+export const updateUserWithoutImages = catchAsyncError(
+  async (req, res, next) => {
+    const id = req.authUser._id;
+    const { userName, recoveryEmail, mobileNumber, gender } = req.body;
+
+    const user = await User.findById(id);
+    if (!user) return next(new AppError(messages.user.notFound, 404));
+
+    if (mobileNumber !== user.mobileNumber) {
+      const mobileNumberUsed = await User.findOne({ mobileNumber });
+      if (mobileNumberUsed)
+        return next(new AppError("Mobile number is already in use", 409));
+    }
+
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: id },
+      {
+        userName,
+        recoveryEmail,
+        mobileNumber,
+        gender,
+      },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return next(new AppError(messages.user.failToUpdate, 500));
+    }
+    updatedUser.password = undefined;
+    res.status(200).json({
+      message: messages.user.updatedSuccessfully,
+      success: true,
+      data: updatedUser,
+    });
+  }
+);
+
 export const updateUser = catchAsyncError(async (req, res, next) => {
   const id = req.authUser._id;
-  const { userName, recoveryEmail, mobileNumber, DOB } = req.body;
+  const {
+    userName,
+    recoveryEmail,
+    mobileNumber,
+    gender,
+    newPassword,
+    confirmPassword,
+  } = req.body;
 
-  const user = await User.findById(id);
+  let user = await User.findById(id);
   if (!user) return next(new AppError(messages.user.notFound, 404));
 
-  if (mobileNumber !== user.mobileNumber) {
+  if (mobileNumber && mobileNumber !== user.mobileNumber) {
     const mobileNumberUsed = await User.findOne({ mobileNumber });
     if (mobileNumberUsed)
       return next(new AppError("Mobile number is already in use", 409));
   }
 
-  const updatedUser = await User.findOneAndUpdate(
-    { _id: id },
-    {
-      userName,
-      recoveryEmail,
-      mobileNumber,
-      DOB,
-    },
-    { new: true }
-  );
+  if (req.file) {
+    if (user.image?.public_id) {
+      await deleteCloud(user.image.public_id);
+    }
 
-  if (!updatedUser) {
-    return next(new AppError(messages.user.failToUpdate, 500));
+    const { secure_url, public_id } = await cloudinary.uploader.upload(
+      req.file.path,
+      { folder: "ITI-REACT/users" }
+    );
+
+    user.image = { secure_url, public_id };
   }
+
+  if (newPassword || confirmPassword) {
+    if (!newPassword || !confirmPassword) {
+      return next(
+        new AppError("To change password, both fields are required.", 400)
+      );
+    }
+
+    if (newPassword !== confirmPassword) {
+      return next(new AppError("Passwords do not match", 400));
+    }
+
+    const hashPass = hashedPass(newPassword, Number(process.env.SALT_ROUNDS));
+    user.password = hashPass;
+    user.passwordChangedAt = Date.now();
+  }
+
+  // ===> Update other profile fields
+  if (userName !== undefined) user.userName = userName;
+  if (recoveryEmail !== undefined) user.recoveryEmail = recoveryEmail;
+  if (mobileNumber !== undefined) user.mobileNumber = mobileNumber;
+  if (gender !== undefined) user.gender = gender;
+
+  const updatedUser = await user.save();
+  if (!updatedUser) return next(new AppError(messages.user.failToUpdate, 500));
+
   updatedUser.password = undefined;
+
   res.status(200).json({
     message: messages.user.updatedSuccessfully,
     success: true,
