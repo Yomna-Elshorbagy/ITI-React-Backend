@@ -8,7 +8,11 @@ import { deleteCloud } from "../../utils/fileUpload/file-functions.js";
 import { comparePass, hashedPass } from "../../utils/hash-compare.js";
 
 export const getProfile = catchAsyncError(async (req, res, next) => {
-  return res.status(200).json({ message: req.authUser });
+  res.status(200).json({
+    message: "User data retrieved successfully",
+    success: true,
+    data: req.authUser,
+  });
 });
 
 export const getAllUsers = catchAsyncError(async (req, res, next) => {

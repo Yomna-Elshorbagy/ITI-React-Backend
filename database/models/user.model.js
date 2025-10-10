@@ -17,6 +17,11 @@ let userSchema = new mongoose.Schema(
       lowercase: true,
       match: /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/,
     },
+    recoveryEmail: {
+      type: String,
+      unique: true,
+      lowercase: true,
+    },
     password: {
       type: String,
       required: true,
