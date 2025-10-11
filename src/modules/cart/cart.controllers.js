@@ -20,11 +20,11 @@ const calcNoOfItems = (items) => {
 export const addToCart = catchAsyncError(async (req, res, next) => {
   const { productId, quantity = 1 } = req.body;
 
-  // ==> 1- Check product existence
+  // 1️- Check product existence
   const productExist = await Product.findById(productId);
   if (!productExist) return next(new AppError(messages.product.notFound, 404));
 
-  // ==> 2️- get or create user cart
+  // 2️- Get or create user cart
   let cart = await Cart.findOne({ user: req.authUser._id });
 
   if (!cart) {
@@ -40,61 +40,54 @@ export const addToCart = catchAsyncError(async (req, res, next) => {
 
     calcTotalPrice(cart);
     await cart.save();
-
-    return res.status(201).json({
-      message: messages.cart.createdSuccessfully,
-      success: true,
-      noOfCartItems: calcNoOfItems(cart),
-      calcNoOfProducts: calcNoOfProducts(cart),
-      cart,
-    });
-  }
-
-  // ===> 3- If cart exists, check if product already in cart
-  const productInCart = cart.products.find(
-    (p) => p.productId.toString() === productId
-  );
-
-  if (productInCart) {
-    const newQuantity = productInCart.quantity + quantity;
-
-    // check if total quantity exceeds stock
-    if (!productExist.instock(newQuantity)) {
-      return next(new AppError(messages.product.outStock, 400));
-    }
-
-    productInCart.quantity = newQuantity;
-    productInCart.price = productExist.price;
   } else {
-    //  new product in cart
-    if (!productExist.instock(quantity)) {
-      return next(new AppError(messages.product.outStock, 400));
+    // 3️- If cart exists, check if product already in cart
+    const productInCart = cart.products.find(
+      (p) => p.productId.toString() === productId
+    );
+
+    if (productInCart) {
+      const newQuantity = productInCart.quantity + quantity;
+
+      if (!productExist.instock(newQuantity)) {
+        return next(new AppError(messages.product.outStock, 400));
+      }
+
+      productInCart.quantity = newQuantity;
+      productInCart.price = productExist.price;
+    } else {
+      // new product in cart
+      if (!productExist.instock(quantity)) {
+        return next(new AppError(messages.product.outStock, 400));
+      }
+
+      cart.products.push({
+        productId,
+        quantity,
+        price: productExist.price,
+      });
     }
 
-    cart.products.push({
-      productId,
-      quantity,
-      price: productExist.price,
-    });
+    // 4️- Recalculate totals and save
+    calcTotalPrice(cart);
+    await cart.save();
   }
 
-  // ==> 4️- recalculate totals and save
-  calcTotalPrice(cart);
-  await cart.save();
+  // 5️- Populate products with full product details
+  await cart.populate("products.productId");
 
   const noOfCartItems = calcNoOfItems(cart);
   const noOfProducts = calcNoOfProducts(cart);
 
   res.status(200).json({
-    message: productInCart
-      ? messages.cart.updatedSuccessfully
-      : messages.cart.createdSuccessfully,
+    message: messages.cart.updatedSuccessfully,
     success: true,
     noOfCartItems,
     noOfProducts,
     cart,
   });
 });
+
 
 export const deleteFromCart = catchAsyncError(async (req, res, next) => {
   // Get productId from request body
