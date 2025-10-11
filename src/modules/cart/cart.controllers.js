@@ -88,34 +88,45 @@ export const addToCart = catchAsyncError(async (req, res, next) => {
   });
 });
 
-
 export const deleteFromCart = catchAsyncError(async (req, res, next) => {
-  // Get productId from request body
   const { id } = req.params;
-  if (!id) {
-    return next(new AppError("Product ID is required", 400));
-  }
-  // Check if the product exists in the cart
-  const userCart = await Cart.findOne({
-    user: req.authUser._id,
-  });
-  // .populate({ path: "products.productId", select: "price" });;
+  if (!id) return next(new AppError("Product ID is required", 400));
+
+  const userCart = await Cart.findOne({ user: req.authUser._id });
   if (!userCart) return next(new AppError(messages.cart.notFound, 404));
-  const product = await Cart.findOne({ "products.productId": id });
-  if (!product) return next(new AppError("product not in cart"));
-  // Remove the product from the cart
-  const updatedCart = await Cart.findOneAndUpdate(
-    { user: req.authUser._id },
-    { $pull: { products: { productId: id } } }, // Remove the product from the products array
-    { new: true }
+
+  const productInCart = userCart.products.find(
+    (p) => p.productId.toString() === id
   );
-  calcTotalPrice(updatedCart);
-  await updatedCart.save();
+  if (!productInCart) {
+    return next(new AppError("Product not found in cart", 404));
+  }
+
+  userCart.products = userCart.products.filter(
+    (p) => p.productId.toString() !== id
+  );
+
+  calcTotalPrice(userCart);
+  await userCart.save();
+
+  await userCart.populate({
+    path: "products.productId",
+    select: "title imageCover price discount finalPrice stock category",
+    populate: {
+      path: "category",
+      select: "name image",
+    },
+  });
+
+  const noOfCartItems = calcNoOfItems(userCart);
+  const noOfProducts = calcNoOfProducts(userCart);
 
   return res.status(200).json({
-    message: "Product removed from cart",
     success: true,
-    data: updatedCart,
+    message: "Product removed from cart",
+    noOfCartItems,
+    noOfProducts,
+    data: userCart,
   });
 });
 
@@ -164,18 +175,28 @@ export const clearCart = catchAsyncError(async (req, res, next) => {
 });
 
 export const updateQuantity = catchAsyncError(async (req, res, next) => {
-  let { id } = req.params;
-  let { quantity } = req.body;
-  let cart = await Cart.findOne({ user: req.authUser._id });
-  // .populate({ path: "products.productId", select: "price", });
+  const { id } = req.params;
+  const { quantity } = req.body;
+
+  const cart = await Cart.findOne({ user: req.authUser._id });
   if (!cart) return next(new AppError(messages.cart.notFound, 404));
-  let item = cart.products.find((item) => item.productId._id == id);
-  if (!item) {
-    return next(new AppError(messages.product.notFound, 404));
-  }
+
+  const item = cart.products.find((item) => item.productId.toString() === id);
+  if (!item) return next(new AppError(messages.product.notFound, 404));
+
   item.quantity = quantity;
   calcTotalPrice(cart);
   await cart.save();
+
+  await cart.populate({
+    path: "products.productId",
+    select: "title imageCover price discount finalPrice stock category",
+    populate: {
+      path: "category",
+      select: "name image",
+    },
+  });
+
   const noOfCartItems = calcNoOfItems(cart);
   const noOfProducts = calcNoOfProducts(cart);
 
