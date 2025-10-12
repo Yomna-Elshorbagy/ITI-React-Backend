@@ -3,7 +3,7 @@ import { emailtemplet } from "./email-templet.js";
 import { generateToken } from "./token.js";
 
 
-const transporter = nodemailer.createTransport({
+export const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: process.env.SENDEMAIL,
