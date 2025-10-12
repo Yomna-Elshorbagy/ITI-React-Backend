@@ -184,6 +184,17 @@ export const updateQuantity = catchAsyncError(async (req, res, next) => {
   const item = cart.products.find((item) => item.productId.toString() === id);
   if (!item) return next(new AppError(messages.product.notFound, 404));
 
+  const product = await Product.findById(id);
+  if (!product) return next(new AppError(messages.product.notFound, 404));
+
+  if (quantity > product.stock) {
+    return next(
+      new AppError(
+        `Requested quantity exceeds available stock.`,
+        400
+      )
+    );
+  }
   item.quantity = quantity;
   calcTotalPrice(cart);
   await cart.save();
