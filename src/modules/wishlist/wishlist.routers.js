@@ -13,7 +13,7 @@ wishlistRouter.put(
   validate(addWishlistVal),
   wishlistController.addToWishlist
 );
-wishlistRouter.put("/clear", auth, wishlistController.deleteWishlist);
+wishlistRouter.put("/clear", auth, wishlistController.clearWishlist);
 
 wishlistRouter.put(
   "/:productId",
