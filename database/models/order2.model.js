@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { orderStatus } from "../../src/utils/constant/enums.js";
+import { orderStatus } from './../../src/utils/constant/enums.js';
 
 const orderSchema = new Schema(
   {
@@ -8,8 +8,18 @@ const orderSchema = new Schema(
       ref: "User",
       required: true,
     },
-    fullName: {
+
+    userName: {
       type: String,
+      required: true,
+      trim: true,
+    },
+
+    email: {
+      type: String,
+      required: true,
+      lowercase: true,
+      trim: true,
     },
 
     products: [
@@ -36,8 +46,17 @@ const orderSchema = new Schema(
 
     address: {
       type: String,
-      required: true,
       trim: true,
+      default: null,
+    },
+
+    location: {
+      type: {
+        latitude: Number,
+        longitude: Number,
+        description: String,
+      },
+      default: null,
     },
 
     phone: {

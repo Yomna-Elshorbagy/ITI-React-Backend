@@ -32,6 +32,7 @@ export const messages = {
   password: generateMessage("password"),
   category: generateMessage("category"),
   review: generateMessage("review"),
+  order: generateMessage("order"),
   coupon: generateMessage("coupon"),
   file: { required: "file is required" },
   product: { ...generateMessage("product"), outStock: "Out Of Stock" },

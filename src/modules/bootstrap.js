@@ -20,6 +20,7 @@ export const bootstrap = (app) => {
   app.use("/wishlist", allRouters.wishlistRouter);
   app.use("/cart", allRouters.cartRouter);
   app.use("/contact", allRouters.contactRouter);
+  app.use("/order", allRouters.orderRouter);
 
   app.use((req, res, next) => {
     next(new AppError(`Route Not Found ${req.originalUrl}`, 404));

@@ -8,6 +8,7 @@ import couponRouter from "./coupon/coupon.routers.js";
 import cartRouter from './cart/cart.routers.js';
 import wishlistRouter from './wishlist/wishlist.routers.js';
 import contactRouter from './contact/contact.routers.js';
+import orderRouter from './order/order.Router.js';
 
 export {
   authRouter,
@@ -19,5 +20,6 @@ export {
   couponRouter,
   cartRouter,
   wishlistRouter,
-  contactRouter
+  contactRouter,
+  orderRouter,
 };
