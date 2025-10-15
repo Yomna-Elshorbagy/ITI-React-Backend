@@ -1,5 +1,6 @@
 import Category from "../../../database/models/category.model.js";
 import Product from "../../../database/models/product.model.js";
+import User from "../../../database/models/user.model.js";
 import { AppError, catchAsyncError } from "../../utils/catch-error.js";
 import { messages } from "../../utils/constant/messages.js";
 import { ApiFeature } from "../../utils/file-feature.js";
@@ -308,5 +309,54 @@ export const subscribeToPriceDrop = catchAsyncError(async (req, res, next) => {
     message: "Subscribed for price drop alerts successfully!",
     subscribedPrice: product.price,
     data: newSubscription,
+  });
+});
+
+export const contactProductOwner = catchAsyncError(async (req, res, next) => {
+  const { _id: authUserId, mobileNumber: authUserMobile } = req.authUser; 
+  const { productId } = req.params;
+
+  const product = await Product.findById(productId);
+  if (!product) return next(new AppError(messages.product.notFound, 404));
+
+  const productOwner = await User.findById(product.createdBy);
+  if (!productOwner || !productOwner.mobileNumber) {
+    return next(new AppError("Product owner not found", 404));
+  }
+
+  const formatEgyptianNumber = (number) => {
+    let cleanedNumber = number.replace(/\D/g, ""); 
+    if (cleanedNumber.startsWith("0")) {
+      cleanedNumber = cleanedNumber.substring(1);
+    }
+    if (!cleanedNumber.startsWith("20")) {
+      cleanedNumber = "20" + cleanedNumber; 
+    }
+    return cleanedNumber;
+  };
+
+  const senderPhone = formatEgyptianNumber(authUserMobile);
+  const receiverPhone = formatEgyptianNumber(productOwner.mobileNumber);
+
+  const message = encodeURIComponent(
+    `Hello! I am interested in your product: ${product.title}`
+  );
+
+  const whatsappUrl = `https://api.whatsapp.com/send?phone=${receiverPhone}&text=${message}`;
+
+  res.status(200).json({
+    message: "WhatsApp chat link generated successfully",
+    success: true,
+    chatDetails: {
+      sender: {
+        userId: authUserId,
+        mobileNumber: senderPhone,
+      },
+      receiver: {
+        userId: productOwner._id,
+        mobileNumber: receiverPhone,
+      },
+      whatsappUrl,
+    },
   });
 });

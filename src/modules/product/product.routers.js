@@ -24,7 +24,11 @@ productRouter
   .get(productControllers.getAllProducts);
 productRouter.get("/trending", productControllers.getTrendingProducts);
 productRouter.get("/lowstock", productControllers.getLowStock);
-
+productRouter.get(
+  "/contact/:productId",
+  auth,
+  productControllers.contactProductOwner
+);
 productRouter
   .route("/:id")
   .get(productControllers.getSpeCificProduct)
