@@ -1,10 +1,29 @@
 import { Router } from "express";
-import { auth } from "./../../middelwares/auth.js";
+import { auth, isAuthorized } from "./../../middelwares/auth.js";
 import * as orderControllers from "./order.controllers.js";
+import { roles } from "../../utils/constant/enums.js";
 
 const orderRouter = Router();
 orderRouter.get("/", auth, orderControllers.getUserOrders);
 orderRouter.post("/", auth, orderControllers.createOrder);
 orderRouter.get("/:id", auth, orderControllers.getOrderDetails);
+orderRouter.put(
+  "/status/:id",
+  auth,
+  isAuthorized([roles.ADMIN]),
+  orderControllers.updateOrderStatus
+);
+orderRouter.delete(
+  "/hard/:id",
+  auth,
+  isAuthorized([roles.ADMIN]),
+  orderControllers.hardDeleteOrder
+);
+orderRouter.delete(
+  "/soft/:id",
+  auth,
+  isAuthorized([roles.ADMIN]),
+  orderControllers.softDeleteOrder
+);
 
 export default orderRouter;
