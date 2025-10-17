@@ -22,7 +22,7 @@ export const sendContactMail = async ({ fullName, email, message }) => {
           </div>
 
           <p style="margin-top: 25px; font-size: 14px; color: #888; text-align: center;">
-            — Jewelry House Team 💍
+            — Kayan Jewelry Team 💍
           </p>
         </div>
       </div>
@@ -31,7 +31,7 @@ export const sendContactMail = async ({ fullName, email, message }) => {
 
   // Send to admin
   const info = await transporter.sendMail({
-    from: `"Jewelry House 💍" <${process.env.SENDEMAIL}>`,
+    from: `"Kayan Jewelry 💍" <${process.env.SENDEMAIL}>`,
     to: supportEmail,
     subject: `💌 New Contact Message from ${fullName}`,
     html: htmlTemplate,
@@ -53,9 +53,9 @@ export const sendContactMail = async ({ fullName, email, message }) => {
   `;
 
   await transporter.sendMail({
-    from: `"Jewelry House 💍" <${process.env.SENDEMAIL}>`,
+    from: `"Kayan Jewelry 💍" <${process.env.SENDEMAIL}>`,
     to: email,
-    subject: "Thank you for contacting Jewelry House",
+    subject: "Thank you for contacting Kayan Jewelry",
     html: replyHtml,
   });
 };
