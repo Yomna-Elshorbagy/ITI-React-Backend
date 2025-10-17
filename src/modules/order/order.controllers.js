@@ -86,7 +86,7 @@ export const createOrder = catchAsyncError(async (req, res, next) => {
 
 export const getUserOrders = catchAsyncError(async (req, res, next) => {
   const userId = req.authUser._id;
-  const orders = await Order.find({ user: userId }).sort({ createdAt: -1 });
+  const orders = await Order.find({ user: userId }).sort({ createdAt: -1 }).populate("products.productId");
 
   return res.status(200).json({
     message: messages.SUCCESS,
