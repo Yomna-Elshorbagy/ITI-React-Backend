@@ -33,6 +33,7 @@ userRouter.put(
 
 userRouter.delete("/", auth, userController.deleteUserByUser);
 userRouter.delete("/softDelete", auth, userController.softDeleteUserByUser);
+userRouter.put("/byadmin/:id", auth, userController.updateUserByAdmin);
 userRouter.delete("/delete/:id", auth, userController.deleteUser);
 userRouter.delete("/softDelete/:id", auth, userController.softDeleteUser);
 

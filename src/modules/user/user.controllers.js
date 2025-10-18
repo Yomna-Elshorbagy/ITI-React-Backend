@@ -3,6 +3,7 @@ import User from "../../../database/models/user.model.js";
 import { AppError, catchAsyncError } from "../../utils/catch-error.js";
 import { roles, status } from "../../utils/constant/enums.js";
 import { messages } from "../../utils/constant/messages.js";
+import { ApiFeature } from "../../utils/file-feature.js";
 import cloudinary from "../../utils/fileUpload/cloudinary.js";
 import { deleteCloud } from "../../utils/fileUpload/file-functions.js";
 import { comparePass, hashedPass } from "../../utils/hash-compare.js";
@@ -16,11 +17,31 @@ export const getProfile = catchAsyncError(async (req, res, next) => {
 });
 
 export const getAllUsers = catchAsyncError(async (req, res, next) => {
-  const users = await User.find();
+  const apiFeature = new ApiFeature(User.find(), req.query)
+    .filter()
+    .search()
+    .sort()
+    .select()
+    .pagination();
+  const totalUsers = await User.countDocuments();
+  const users = await apiFeature.mongooseQuery;
+  const page = parseInt(req.query.page) || 1;
+  const size = parseInt(req.query.size) || 10;
+  const totalPages = Math.ceil(totalUsers / size);
+
   res.status(200).json({
     success: true,
     message: messages.user.fetchedSuccessfully,
     data: users,
+        meta: {
+      totalUsers,
+      page,
+      size,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    },
+
   });
 });
 
@@ -111,7 +132,10 @@ export const updateUser = catchAsyncError(async (req, res, next) => {
   if (!user) return next(new AppError(messages.user.notFound, 404));
 
   if (mobileNumber && mobileNumber !== user.mobileNumber) {
-    const mobileNumberUsed = await User.findOne({ mobileNumber });
+    const mobileNumberUsed = await User.findOne({
+      mobileNumber,
+      _id: { $ne: id },
+    });
     if (mobileNumberUsed)
       return next(new AppError("Mobile number is already in use", 409));
   }
@@ -163,6 +187,72 @@ export const updateUser = catchAsyncError(async (req, res, next) => {
   });
 });
 
+export const updateUserByAdmin = catchAsyncError(async (req, res, next) => {
+  const { id } = req.params;
+  const {
+    userName,
+    recoveryEmail,
+    mobileNumber,
+    gender,
+    newPassword,
+    confirmPassword,
+  } = req.body;
+
+  const user = await User.findById(id);
+  if (!user) return next(new AppError(messages.user.notFound, 404));
+
+  if (mobileNumber !== user.mobileNumber) {
+    const mobileNumberUsed = await User.findOne({ mobileNumber });
+    if (mobileNumberUsed)
+      return next(new AppError("Mobile number is already in use", 409));
+  }
+
+  
+  if (newPassword || confirmPassword) {
+    if (!newPassword || !confirmPassword) {
+      return next(
+        new AppError("To change password, both fields are required.", 400)
+      );
+    }
+
+    if (newPassword !== confirmPassword) {
+      return next(new AppError("Passwords do not match", 400));
+    }
+
+    const hashPass = hashedPass(newPassword, Number(process.env.SALT_ROUNDS));
+    user.password = hashPass;
+    user.passwordChangedAt = Date.now();
+  }
+
+  // ===> Update other profile fields
+  if (userName !== undefined) user.userName = userName;
+  if (recoveryEmail !== undefined) user.recoveryEmail = recoveryEmail;
+  if (mobileNumber !== undefined) user.mobileNumber = mobileNumber;
+  if (gender !== undefined) user.gender = gender;
+
+  const updatedUser = await User.findOneAndUpdate(
+    { _id: id },
+    {
+      userName,
+      recoveryEmail,
+      mobileNumber,
+      gender,
+      newPassword,
+      confirmPassword,
+    },
+    { new: true }
+  );
+
+  if (!updatedUser) {
+    return next(new AppError(messages.user.failToUpdate, 500));
+  }
+  updatedUser.password = undefined;
+  res.status(200).json({
+    message: messages.user.updatedSuccessfully,
+    success: true,
+    data: updatedUser,
+  });
+});
 export const deleteUserByUser = catchAsyncError(async (req, res, next) => {
   const id = req.authUser._id;
   const user = await User.findById(id);
