@@ -18,6 +18,7 @@ const categorySchema = mongoose.Schema(
       ref: "User",
       required: [true, "Created by user ID is required"],
     },
+    isDeleted: { type: Boolean, default: false },
   },
   {
     timestamps: true,

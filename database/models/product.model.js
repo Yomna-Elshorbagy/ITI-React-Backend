@@ -61,6 +61,7 @@ let productSchema = mongoose.Schema(
       max: 5,
       default: 5,
     },
+    isDeleted: { type: Boolean, default: false },
   },
   {
     timestamps: true,

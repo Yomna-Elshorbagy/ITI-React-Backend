@@ -63,6 +63,11 @@ const orderSchema = new Schema(
       required: true,
     },
 
+    coupon: {
+      type: mongoose.Types.ObjectId,
+      ref: "Coupon",
+    },
+    
     finalPrice: {
       type: Number,
       required: true,

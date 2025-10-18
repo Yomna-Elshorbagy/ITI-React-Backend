@@ -1,7 +1,7 @@
 import Token from "../../../database/models/token.model.js";
 import User from "../../../database/models/user.model.js";
 import { AppError, catchAsyncError } from "../../utils/catch-error.js";
-import { status } from "../../utils/constant/enums.js";
+import { roles, status } from "../../utils/constant/enums.js";
 import { messages } from "../../utils/constant/messages.js";
 import cloudinary from "../../utils/fileUpload/cloudinary.js";
 import { deleteCloud } from "../../utils/fileUpload/file-functions.js";
@@ -163,7 +163,7 @@ export const updateUser = catchAsyncError(async (req, res, next) => {
   });
 });
 
-export const deleteUser = catchAsyncError(async (req, res, next) => {
+export const deleteUserByUser = catchAsyncError(async (req, res, next) => {
   const id = req.authUser._id;
   const user = await User.findById(id);
   if (!user) return next(new AppError(messages.user.notFound, 404));
@@ -177,7 +177,7 @@ export const deleteUser = catchAsyncError(async (req, res, next) => {
     .json({ message: messages.user.deletedSuccessfully, success: true });
 });
 
-export const softDeleteUser = catchAsyncError(async (req, res, next) => {
+export const softDeleteUserByUser = catchAsyncError(async (req, res, next) => {
   const id = req.authUser._id;
   const user = await User.findById(id);
   if (!user) return next(new AppError(messages.user.notFound, 404));
@@ -191,6 +191,61 @@ export const softDeleteUser = catchAsyncError(async (req, res, next) => {
     return next(new AppError(messages.user.failToDelete, 500));
   }
   softDeletedUser.password = undefined;
+  res.status(200).json({
+    message: messages.user.deletedSuccessfully,
+    success: true,
+    data: softDeletedUser,
+  });
+});
+
+//===> admins delete
+export const deleteUser = catchAsyncError(async (req, res, next) => {
+  const { id: userIdFromParams } = req.params;
+  const authUser = req.authUser;
+
+  const idToDelete =
+    authUser.role === roles.ADMIN && userIdFromParams
+      ? userIdFromParams
+      : authUser._id;
+
+  const user = await User.findById(idToDelete);
+  if (!user) return next(new AppError(messages.user.notFound, 404));
+
+  const deletedUser = await User.deleteOne({ _id: idToDelete });
+  if (!deletedUser) {
+    return next(new AppError(messages.user.failToDelete, 500));
+  }
+
+  res.status(200).json({
+    message: messages.user.deletedSuccessfully,
+    success: true,
+  });
+});
+
+export const softDeleteUser = catchAsyncError(async (req, res, next) => {
+  const { id: userIdFromParams } = req.params;
+  const authUser = req.authUser;
+
+  const idToDelete =
+    authUser.role === "Admin" && userIdFromParams
+      ? userIdFromParams
+      : authUser._id;
+
+  const user = await User.findById(idToDelete);
+  if (!user) return next(new AppError(messages.user.notFound, 404));
+
+  const softDeletedUser = await User.findByIdAndUpdate(
+    idToDelete,
+    { status: status.DELETED },
+    { new: true }
+  );
+
+  if (!softDeletedUser) {
+    return next(new AppError(messages.user.failToDelete, 500));
+  }
+
+  softDeletedUser.password = undefined;
+
   res.status(200).json({
     message: messages.user.deletedSuccessfully,
     success: true,

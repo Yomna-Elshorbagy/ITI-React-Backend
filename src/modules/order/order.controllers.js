@@ -6,6 +6,7 @@ import { messages } from "../../utils/constant/messages.js";
 import { AppError, catchAsyncError } from "../../utils/catch-error.js";
 import Coupon from "../../../database/models/coupon.model.js";
 import { couponTypes, orderStatus } from "../../utils/constant/enums.js";
+import Product from "../../../database/models/product.model.js";
 
 export const createOrder = catchAsyncError(async (req, res, next) => {
   const { fullName, address, phone, couponCode } = req.body;
@@ -60,7 +61,7 @@ export const createOrder = catchAsyncError(async (req, res, next) => {
 
     if (coupon.type === couponTypes.PERCENTAGE) {
       finalPrice = orderPrice - (orderPrice * coupon.discount) / 100;
-    } else if (coupon.type === couponTypes.FIXED) {
+    } else if (coupon.type === couponTypes.FIXED_AMOUNT) {
       finalPrice = Math.max(0, orderPrice - coupon.discount);
     }
   }
@@ -73,8 +74,14 @@ export const createOrder = catchAsyncError(async (req, res, next) => {
     phone,
     orderPrice,
     finalPrice,
+    coupon: appliedCoupon,
   });
 
+  for (const item of orderProducts) {
+    await Product.findByIdAndUpdate(item.productId, {
+      $inc: { stock: -item.quantity },
+    });
+  }
   await Cart.findOneAndDelete({ user: userId });
 
   res.status(201).json({
@@ -86,7 +93,9 @@ export const createOrder = catchAsyncError(async (req, res, next) => {
 
 export const getUserOrders = catchAsyncError(async (req, res, next) => {
   const userId = req.authUser._id;
-  const orders = await Order.find({ user: userId }).sort({ createdAt: -1 }).populate("products.productId");
+  const orders = await Order.find({ user: userId })
+    .sort({ createdAt: -1 })
+    .populate("products.productId");
 
   return res.status(200).json({
     message: messages.SUCCESS,

@@ -2,7 +2,7 @@ const generateMessage = (entity) => ({
   alreadyExist: `${entity} already exist`,
   notFound: `${entity} not found`,
   notAllowed: `You are not allowed to ${entity}`,
-  notAuthorized: `You are not authorized to ${entity}`,
+  notAuthorized: `You are not authorized`,
   notValid: `${entity} is not valid`,
   notMatch: `${entity} do not match`,
   notCorrect: `${entity} is not correct`,

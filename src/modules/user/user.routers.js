@@ -30,7 +30,10 @@ userRouter.put(
   uploadSingleFile("image", "users"),
   userController.updateUser
 );
-userRouter.delete("/", auth, userController.deleteUser);
-userRouter.delete("/softDelete", auth, userController.softDeleteUser);
+
+userRouter.delete("/", auth, userController.deleteUserByUser);
+userRouter.delete("/softDelete", auth, userController.softDeleteUserByUser);
+userRouter.delete("/delete/:id", auth, userController.deleteUser);
+userRouter.delete("/softDelete/:id", auth, userController.softDeleteUser);
 
 export default userRouter;

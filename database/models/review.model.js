@@ -10,7 +10,7 @@ let reviewSchema = mongoose.Schema(
       type: Number,
       require: true,
       min: 0,
-      max:5
+      max: 5,
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -18,10 +18,11 @@ let reviewSchema = mongoose.Schema(
       require: true,
     },
     product: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Product",
-        require: true,
-      }
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      require: true,
+    },
+    isDeleted: { type: Boolean, default: false },
   },
   {
     timestamps: true,

@@ -5,19 +5,19 @@ let couponSchema = mongoose.Schema(
   {
     code: {
       type: String,
-      require: true,
+      required: true,
       unique: true,
       lowerCase: true,
     },
     type: {
       type: String,
       enum: Object.values(couponTypes),
-      require: true,
+      required: true,
       default: couponTypes.FIXED_AMOUNT,
     },
     fromDate: {
       type: Date,
-      default: Date.now(),
+      default: Date.now,
     },
     expire: {
       type: Date,
@@ -45,6 +45,7 @@ let couponSchema = mongoose.Schema(
       ref: "User",
       required: true,
     },
+    isDeleted: { type: Boolean, default: false },
   },
   {
     timestamps: true,
