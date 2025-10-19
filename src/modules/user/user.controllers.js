@@ -318,7 +318,7 @@ export const softDeleteUser = catchAsyncError(async (req, res, next) => {
   const authUser = req.authUser;
 
   const idToDelete =
-    authUser.role === "Admin" && userIdFromParams
+    authUser.role === roles.ADMIN && userIdFromParams
       ? userIdFromParams
       : authUser._id;
 
