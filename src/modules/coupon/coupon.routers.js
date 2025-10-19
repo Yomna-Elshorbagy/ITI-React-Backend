@@ -7,6 +7,7 @@ import { validate } from "../../middelwares/validate.js";
 
 const couponRouter = Router();
 
+couponRouter.get("/", auth, couponControllers.getCoupons);
 couponRouter.get("/:id", auth, couponControllers.getCoupon);
 couponRouter.post(
   "/addCoupon",

@@ -36,7 +36,21 @@ export class ApiFeature {
   search() {
     if (this.queryData.keyword) {
       const keyword = this.queryData.keyword;
-      const searchFields = ["userName", "name", "description", "title"];
+      const searchFields = [
+        "userName",
+        "name",
+        "description",
+        "title",
+        "code",
+        "email",
+        "mobileNumber",
+        "address",
+        "coupon",
+        "user",
+        "product",
+        "comment",
+        "discount",
+      ];
       const searchQuery = {
         $or: searchFields.map((field) => ({
           [field]: { $regex: keyword, $options: "i" },

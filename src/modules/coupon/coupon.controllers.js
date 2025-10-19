@@ -98,19 +98,39 @@ export const getCoupon = catchAsyncError(async (req, res, next) => {
 });
 
 export const getCoupons = catchAsyncError(async (req, res, next) => {
+  const page = parseInt(req.query.page) || 1;
+  const size = parseInt(req.query.size) || 10;
+
   const apiFeature = new ApiFeature(Coupon.find(), req.query)
-    .pagination()
+    .filter()
     .sort()
     .select()
-    .filter();
+    .pagination();
+
   const coupons = await apiFeature.mongooseQuery;
+
+  const { page: p, size: s, ...filters } = req.query;
+  const totalDocuments = await Coupon.countDocuments(filters);
+  const numberOfPages = Math.ceil(totalDocuments / size);
+
+  const metadata = {
+    currentPage: page,
+    numberOfPages,
+    limit: size,
+    totalDocuments,
+    prevPage: page > 1 ? page - 1 : null,
+    nextPage: page < numberOfPages ? page + 1 : null,
+  };
 
   res.status(200).json({
     message: messages.coupon.fetchedSuccessfully,
     success: true,
+    results: coupons.length,
+    metadata,
     data: coupons,
   });
 });
+
 
 export const validateCoupon = catchAsyncError(async (req, res, next) => {
   const { code } = req.body;
