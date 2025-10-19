@@ -281,3 +281,36 @@ export const createOrderWithLocation = catchAsyncError(
     });
   }
 );
+
+export const getAllOrders = catchAsyncError(async (req, res, next) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const filter = { isDeleted: { $ne: true } };
+
+  const ordersQuery = Order.find(filter)
+    .populate("user", "firstName lastName email")
+    .populate("products.productId", "title price finalPrice")
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  const [orders, totalOrders] = await Promise.all([
+    ordersQuery,
+    Order.countDocuments(filter),
+  ]);
+
+  const totalPages = Math.ceil(totalOrders / limit);
+
+  res.status(200).json({
+    success: true,
+    message: messages.SUCCESS,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalOrders,
+    },
+    data: orders,
+  });
+});

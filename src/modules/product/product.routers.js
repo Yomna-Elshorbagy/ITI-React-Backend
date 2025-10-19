@@ -24,6 +24,9 @@ productRouter
   .get(productControllers.getAllProducts);
 productRouter.get("/trending", productControllers.getTrendingProducts);
 productRouter.get("/lowstock", productControllers.getLowStock);
+productRouter.get("/export", auth, productControllers.exportProducts);
+productRouter.post("/import", auth, productControllers.importProducts);
+
 productRouter.get(
   "/contact/:productId",
   auth,

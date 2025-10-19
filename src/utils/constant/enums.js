@@ -26,7 +26,7 @@ Object.freeze(couponTypes);
 export const orderStatus = {
   PLACED: "placed",
   SHIPPING: "shipping",
-  DELIVERED: "delivered",
+  COMPLETED: "Completed",
   CANCELED: "canceled",
   REFUNDED: "refund",
 };

@@ -360,3 +360,59 @@ export const contactProductOwner = catchAsyncError(async (req, res, next) => {
     },
   });
 });
+
+export const exportProducts = catchAsyncError(async (req, res, next) => {
+  const products = await Product.find()
+    .populate("category", "name")
+    .populate("createdBy", "userName email");
+
+  if (!products.length) {
+    return next(new AppError("No products found to export", 404));
+  }
+
+  res.setHeader("Content-Type", "application/json");
+  res.setHeader(
+    "Content-Disposition",
+    "attachment; filename=products_export.json"
+  );
+
+  res.status(200).json(products);
+});
+
+export const importProducts = catchAsyncError(async (req, res, next) => {
+  const products = req.body; 
+
+  if (!Array.isArray(products) || products.length === 0) {
+    return next(new AppError("Invalid or empty product data", 400));
+  }
+
+  const validProducts = [];
+
+  for (const product of products) {
+    if (product.title && product.price && product.category) {
+      validProducts.push({
+        title: product.title,
+        description: product.description || "",
+        imageCover: product.imageCover || {},
+        subImages: product.subImages || [],
+        price: product.price,
+        discount: product.discount || 0,
+        stock: product.stock || 0,
+        category: product.category?._id || product.category,
+        createdBy: req.authUser._id,
+        updatedBy: req.authUser._id,
+      });
+    }
+  }
+
+  if (!validProducts.length) {
+    return next(new AppError("No valid products to import", 400));
+  }
+
+  await Product.insertMany(validProducts, { ordered: false });
+
+  res.status(201).json({
+    success: true,
+    message: `${validProducts.length} products imported successfully`,
+  });
+});
