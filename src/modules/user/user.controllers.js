@@ -187,6 +187,43 @@ export const updateUser = catchAsyncError(async (req, res, next) => {
   });
 });
 
+
+export const deleteUserByUser = catchAsyncError(async (req, res, next) => {
+  const id = req.authUser._id;
+  const user = await User.findById(id);
+  if (!user) return next(new AppError(messages.user.notFound, 404));
+
+  const deletedUser = await User.deleteOne({ _id: id });
+  if (!deletedUser) {
+    return next(new AppError(messages.user.failToDelete, 500));
+  }
+  res
+    .status(200)
+    .json({ message: messages.user.deletedSuccessfully, success: true });
+});
+
+export const softDeleteUserByUser = catchAsyncError(async (req, res, next) => {
+  const id = req.authUser._id;
+  const user = await User.findById(id);
+  if (!user) return next(new AppError(messages.user.notFound, 404));
+
+  const softDeletedUser = await User.findByIdAndUpdate(
+    id,
+    { status: status.DELETED },
+    { new: true }
+  );
+  if (!softDeletedUser) {
+    return next(new AppError(messages.user.failToDelete, 500));
+  }
+  softDeletedUser.password = undefined;
+  res.status(200).json({
+    message: messages.user.deletedSuccessfully,
+    success: true,
+    data: softDeletedUser,
+  });
+});
+
+//===> admins delete
 export const updateUserByAdmin = catchAsyncError(async (req, res, next) => {
   const { id } = req.params;
   const {
@@ -253,42 +290,6 @@ export const updateUserByAdmin = catchAsyncError(async (req, res, next) => {
     data: updatedUser,
   });
 });
-export const deleteUserByUser = catchAsyncError(async (req, res, next) => {
-  const id = req.authUser._id;
-  const user = await User.findById(id);
-  if (!user) return next(new AppError(messages.user.notFound, 404));
-
-  const deletedUser = await User.deleteOne({ _id: id });
-  if (!deletedUser) {
-    return next(new AppError(messages.user.failToDelete, 500));
-  }
-  res
-    .status(200)
-    .json({ message: messages.user.deletedSuccessfully, success: true });
-});
-
-export const softDeleteUserByUser = catchAsyncError(async (req, res, next) => {
-  const id = req.authUser._id;
-  const user = await User.findById(id);
-  if (!user) return next(new AppError(messages.user.notFound, 404));
-
-  const softDeletedUser = await User.findByIdAndUpdate(
-    id,
-    { status: status.DELETED },
-    { new: true }
-  );
-  if (!softDeletedUser) {
-    return next(new AppError(messages.user.failToDelete, 500));
-  }
-  softDeletedUser.password = undefined;
-  res.status(200).json({
-    message: messages.user.deletedSuccessfully,
-    success: true,
-    data: softDeletedUser,
-  });
-});
-
-//===> admins delete
 export const deleteUser = catchAsyncError(async (req, res, next) => {
   const { id: userIdFromParams } = req.params;
   const authUser = req.authUser;

@@ -1,3 +1,4 @@
+import useragent from "useragent";
 import User from "../../../database/models/user.model.js";
 import { messages } from "../../utils/constant/messages.js";
 import { comparePass, hashedPass } from "../../utils/hash-compare.js";
@@ -9,7 +10,8 @@ import { generateOTP } from "../../utils/otp.js";
 import Token from "../../../database/models/token.model.js";
 import { AppError, catchAsyncError } from "../../utils/catch-error.js";
 import { verifyGoogleToken } from "../../utils/oAuth/googleAuth.js";
-
+import LoginActivity from "../../../database/models/loginActivity.js";
+import { ApiFeature } from "../../utils/file-feature.js";
 export const signup = catchAsyncError(async (req, res, next) => {
   //get data from req
   let {
@@ -63,7 +65,7 @@ export const signup = catchAsyncError(async (req, res, next) => {
   await Token.create({
     token,
     userId: createdUser._id,
-    expiresAt: new Date(Date.now()  + 30 * 24 * 60 * 60 * 1000),
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   });
   createdUser.password = undefined;
   await sendEmail(
@@ -174,8 +176,22 @@ export const logIn = catchAsyncError(async (req, res, next) => {
   await Token.create({
     token: accessToken,
     userId: userExist._id,
-    expiresAt: new Date(Date.now()  + 30 * 24 * 60 * 60 * 1000), 
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   });
+  const agent = useragent.parse(req.headers["user-agent"] || "Unknown");
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  try {
+    const log = await LoginActivity.create({
+      user: userExist._id,
+      ip,
+      browser: agent.family || "Unknown",
+      device: agent.device.toString() || "Unknown",
+    });
+    console.log("LoginActivity saved:", log);
+  } catch (err) {
+    console.error("Failed to save LoginActivity:", err);
+  }
+
   res.json({
     message: messages.user.loggedInSuccessfully,
     success: true,
@@ -243,10 +259,12 @@ export const changePassword = catchAsyncError(async (req, res, next) => {
     userId: user._id,
     expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   });
-  
-  return res
-    .status(200)
-    .json({ message: messages.password.updatedSuccessfully, success: true , accessToken});
+
+  return res.status(200).json({
+    message: messages.password.updatedSuccessfully,
+    success: true,
+    accessToken,
+  });
 });
 
 export const logout = catchAsyncError(async (req, res, next) => {
@@ -273,7 +291,7 @@ export const logout = catchAsyncError(async (req, res, next) => {
 });
 
 export const googleLogin = catchAsyncError(async (req, res, next) => {
-  const { idToken } = req.body; 
+  const { idToken } = req.body;
 
   const googleUser = await verifyGoogleToken(idToken);
   if (!googleUser || !googleUser.email_verified) {
@@ -286,7 +304,7 @@ export const googleLogin = catchAsyncError(async (req, res, next) => {
     user = await User.create({
       userName: googleUser.name,
       email: googleUser.email,
-      password: null, 
+      password: null,
       isVerified: true,
       status: status.VERIFIED,
       authProvider: "google",
@@ -315,5 +333,37 @@ export const googleLogin = catchAsyncError(async (req, res, next) => {
     success: true,
     accessToken,
     user,
+  });
+});
+
+export const getLoginActivity = catchAsyncError(async (req, res, next) => {
+  const apiFeature = new ApiFeature(
+    LoginActivity.find({ user: req.authUser._id }),
+    req.query
+  )
+    .sort() // sort handled inside ApiFeature (you can still default manually)
+    .pagination();
+
+  const totalLogs = await LoginActivity.countDocuments({
+    user: req.authUser._id,
+  });
+  const logs = await apiFeature.mongooseQuery.sort({ loggedAt: -1 }); // <-- default sort if none provided
+
+  const page = parseInt(req.query.page) || 1;
+  const size = parseInt(req.query.size) || 10;
+  const totalPages = Math.ceil(totalLogs / size);
+
+  res.status(200).json({
+    success: true,
+    message: "Login activity fetched successfully",
+    data: logs,
+    meta: {
+      totalLogs,
+      page,
+      size,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    },
   });
 });

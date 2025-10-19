@@ -14,6 +14,7 @@ authRouter.post(
   authControllers.signup
 );
 authRouter.get("/verify/:token", authControllers.verifyAccount);
+authRouter.get("/activity", auth, authControllers.getLoginActivity);
 authRouter.post("/login", authControllers.logIn);
 authRouter.post("/google-login", authControllers.googleLogin);
 authRouter.post("/logout", auth, authControllers.logout);
