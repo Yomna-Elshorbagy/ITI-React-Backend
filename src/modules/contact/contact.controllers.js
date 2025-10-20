@@ -84,3 +84,33 @@ export const replyToContact = catchAsyncError(async (req, res, next) => {
     data: contact,
   });
 });
+export const deleteContact = catchAsyncError(async (req, res, next) => {
+  const { id } = req.params;
+
+  const contact = await Contact.findByIdAndDelete(id);
+  if (!contact) return next(new AppError("Contact not found", 404));
+
+  res.status(200).json({
+    success: true,
+    message: "Contact deleted successfully",
+  });
+});
+
+export const softDeleteContact = catchAsyncError(async (req, res, next) => {
+  const { id } = req.params;
+
+  const contact = await Contact.findByIdAndUpdate(
+    id,
+    { isDeleted: true },
+    { new: true }
+  );
+
+  if (!contact) return next(new AppError("Contact not found", 404));
+
+  res.status(200).json({
+    success: true,
+    message: "Contact soft deleted successfully",
+    data: contact,
+  });
+});
+
