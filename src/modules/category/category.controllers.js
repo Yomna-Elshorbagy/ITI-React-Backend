@@ -246,23 +246,50 @@ export const getTrendingCategories = catchAsyncError(async (req, res, next) => {
 
 // ==> indicates: how many categories exist - Which category was added most recently - how many products belong to each category.
 export const getCategoryStats = catchAsyncError(async (req, res, next) => {
-  const totalCategories = await Category.countDocuments();
-  const latest = await Category.find().sort({ createdAt: -1 }).limit(1);
-  const productsPerCategory = await Product.aggregate([
-    {
-      $group: {
-        _id: "$category",
-        count: { $sum: 1 },
-      },
-    },
-  ]);
+  try {
+    const totalCategories = await Category.countDocuments();
 
-  res.status(200).json({
-    success: true,
-    data: {
-      totalCategories,
-      latest,
-      productsPerCategory,
-    },
-  });
+    const latest = await Category.find()
+      .sort({ createdAt: -1 })
+      .limit(1)
+      .select("name createdAt image");
+
+    const productsPerCategory = await Product.aggregate([
+      {
+        $group: {
+          _id: "$category",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "_id",
+          foreignField: "_id",
+          as: "categoryInfo",
+        },
+      },
+      { $unwind: { path: "$categoryInfo", preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 0,
+          categoryId: "$_id",
+          categoryName: "$categoryInfo.name",
+          count: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalCategories,
+        latest,
+        productsPerCategory,
+      },
+    });
+  } catch (error) {
+    console.error("getCategoryStats error:", error);
+    return next(new AppError("Failed to fetch category stats", 500));
+  }
 });
