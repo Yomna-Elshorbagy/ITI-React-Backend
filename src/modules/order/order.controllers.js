@@ -82,7 +82,11 @@ export const createOrder = catchAsyncError(async (req, res, next) => {
       $inc: { stock: -item.quantity },
     });
   }
-  await Cart.findOneAndDelete({ user: userId });
+  await Cart.findOneAndUpdate(
+    { user: userId },
+    { $set: { products: [], totalPrice: 0 } },
+    { new: true }
+  );
 
   res.status(201).json({
     message: messages.order.createdSuccessfully,
