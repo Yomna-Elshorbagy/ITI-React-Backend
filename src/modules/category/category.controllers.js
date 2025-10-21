@@ -6,6 +6,23 @@ import { ApiFeature } from "../../utils/file-feature.js";
 import cloudinary from "../../utils/fileUpload/cloudinary.js";
 import { deleteCloud } from "../../utils/fileUpload/file-functions.js";
 
+export const getCategoryProductCount = async () => {
+  return await Product.aggregate([
+    {
+      $group: {
+        _id: "$category",
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $project: {
+        _id: { $toString: "$_id" },
+        count: 1,
+      },
+    },
+  ]);
+};
+
 export const addCategoryCloud = catchAsyncError(async (req, res, next) => {
   let { name } = req.body; //distruct from req
   name = name.toLowerCase(); //toLowerCase
@@ -88,28 +105,26 @@ export const getCategories = catchAsyncError(async (req, res, next) => {
   const apiFeature = new ApiFeature(
     Category.find().populate({
       path: "createdBy",
-      select: ["userName", "address", "userName", "mobileNumber", "image"],
+      select: ["userName", "address", "mobileNumber", "image"],
     }),
     req.query
   )
     .filter()
-    .search();
+    .search()
+    .pagination()
+    .sort();
 
-  const countQuery = new ApiFeature(
-    Category.find()
-      .select("name image createdBy createdAt")
-      .populate({
-        path: "createdBy",
-        select: ["userName", "address", "userName", "mobileNumber", "image"],
-      }),
-    req.query
-  )
-    .filter()
-    .search();
-  const totalDocuments = await countQuery.mongooseQuery.countDocuments();
-  apiFeature.pagination().sort();
+  const categories = await apiFeature.mongooseQuery;
+  const totalDocuments = await Category.countDocuments();
+  const productCounts = await getCategoryProductCount();
 
-  const category = await apiFeature.mongooseQuery;
+  const mergedCategories = categories.map((cat) => {
+    const foundCount = productCounts.find(
+      (pc) => pc._id === cat._id.toString()
+    );
+    const count = foundCount ? foundCount.count : 0;
+    return { ...cat.toObject(), productCount: count };
+  });
 
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.size) || 10;
@@ -117,16 +132,18 @@ export const getCategories = catchAsyncError(async (req, res, next) => {
 
   return res.json({
     success: true,
-    results: category.length,
+    results: mergedCategories.length,
     metadata: {
       currentPage: page,
       numberOfPages,
       limit,
       prevPage: page > 1 ? page - 1 : null,
+      nextPage: page < numberOfPages ? page + 1 : null,
     },
-    category,
+    data: mergedCategories,
   });
 });
+
 
 export const getSpecificCategory = catchAsyncError(async (req, res, next) => {
   let { id } = req.params;
