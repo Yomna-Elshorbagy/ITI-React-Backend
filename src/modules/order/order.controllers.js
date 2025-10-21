@@ -318,3 +318,41 @@ export const getAllOrders = catchAsyncError(async (req, res, next) => {
     data: orders,
   });
 });
+
+export const updateOrder = catchAsyncError(async (req, res, next) => {
+  const { id } = req.params;
+  const { fullName, phone, address, status, finalPrice } = req.body;
+
+  if (!fullName && !phone && !address && !status && finalPrice === undefined) {
+    return next(new AppError("Please provide at least one field to update", 400));
+  }
+
+  if (finalPrice !== undefined && (isNaN(finalPrice) || finalPrice < 0)) {
+    return next(new AppError("Final price must be a valid positive number", 400));
+  }
+
+  const updatedOrder = await Order.findByIdAndUpdate(
+    id,
+    {
+      ...(fullName && { fullName }),
+      ...(phone && { phone }),
+      ...(address && { address }),
+      ...(status && { status }),
+      ...(finalPrice !== undefined && { finalPrice }), 
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  ).populate("products.productId", "title price finalPrice");
+
+  if (!updatedOrder) {
+    return next(new AppError(messages.order.notFound, 404));
+  }
+
+  return res.status(200).json({
+    success: true,
+    message: "Order updated successfully",
+    data: updatedOrder,
+  });
+});

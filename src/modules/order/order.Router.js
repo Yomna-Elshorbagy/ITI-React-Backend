@@ -8,6 +8,7 @@ orderRouter.get("/", auth, orderControllers.getUserOrders);
 orderRouter.get("/allorders", auth, orderControllers.getAllOrders);
 orderRouter.post("/", auth, orderControllers.createOrder);
 orderRouter.get("/:id", auth, orderControllers.getOrderDetails);
+orderRouter.put("/:id", auth, orderControllers.updateOrder);
 orderRouter.put(
   "/status/:id",
   auth,
