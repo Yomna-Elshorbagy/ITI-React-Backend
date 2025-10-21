@@ -74,7 +74,8 @@ export const replyToContact = catchAsyncError(async (req, res, next) => {
     `,
   });
 
-  contact.reply = replyMessage;
+  contact.replyMessage = replyMessage;
+  contact.replyStatus = "replied";
   contact.repliedAt = new Date();
   await contact.save();
 
@@ -110,6 +111,39 @@ export const softDeleteContact = catchAsyncError(async (req, res, next) => {
   res.status(200).json({
     success: true,
     message: "Contact soft deleted successfully",
+    data: contact,
+  });
+});
+
+export const updateContact = catchAsyncError(async (req, res, next) => {
+  const { id } = req.params;
+
+  const allowedUpdates = ["fullName", "email", "message", "replyStatus", "replyMessage"];
+  const updates = Object.keys(req.body);
+
+  const isValidOperation = updates.every((key) =>
+    allowedUpdates.includes(key)
+  );
+
+  if (!isValidOperation)
+    return next(new AppError("Invalid fields for update", 400));
+
+  const contact = await Contact.findById(id);
+  if (!contact) return next(new AppError("Contact not found", 404));
+
+  updates.forEach((key) => {
+    contact[key] = req.body[key];
+  });
+
+  if (contact.replyMessage && contact.replyStatus === "replied") {
+    contact.repliedAt = new Date();
+  }
+
+  await contact.save();
+
+  res.status(200).json({
+    success: true,
+    message: "Contact updated successfully",
     data: contact,
   });
 });

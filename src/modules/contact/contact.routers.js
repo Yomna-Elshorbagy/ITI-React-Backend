@@ -14,5 +14,6 @@ contactRouter.delete(
   contactControllers.softDeleteContact
 );
 contactRouter.post("/reply/:id", auth, contactControllers.replyToContact);
+contactRouter.put("/:id", auth, contactControllers.updateContact);
 
 export default contactRouter;

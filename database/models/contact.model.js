@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
+import { replay } from "../../src/utils/constant/enums.js";
 
-const contactSchema =  mongoose.Schema(
+const contactSchema = new mongoose.Schema(
   {
     fullName: {
       type: String,
@@ -16,20 +17,29 @@ const contactSchema =  mongoose.Schema(
     message: {
       type: String,
       required: true,
+      trim: true,
     },
-    reply: {
+    replyStatus: {
+      type: String,
+      enum: Object.values(replay),
+      default: replay.PENDING, 
+    },
+    replyMessage: {
       type: String,
       default: null,
+      trim: true,
     },
     repliedAt: {
       type: Date,
       default: null,
     },
-    isDeleted: { type: Boolean, default: false },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
 
 const Contact = mongoose.model("Contact", contactSchema);
-
 export default Contact;
