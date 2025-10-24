@@ -7,6 +7,9 @@ import { AppError, catchAsyncError } from "../../utils/catch-error.js";
 import Coupon from "../../../database/models/coupon.model.js";
 import { couponTypes, orderStatus } from "../../utils/constant/enums.js";
 import Product from "../../../database/models/product.model.js";
+import { Parser } from "json2csv";
+import PDFDocument from "pdfkit";
+import fs from "fs";
 
 export const createOrder = catchAsyncError(async (req, res, next) => {
   const { fullName, address, phone, couponCode } = req.body;
@@ -324,11 +327,15 @@ export const updateOrder = catchAsyncError(async (req, res, next) => {
   const { fullName, phone, address, status, finalPrice } = req.body;
 
   if (!fullName && !phone && !address && !status && finalPrice === undefined) {
-    return next(new AppError("Please provide at least one field to update", 400));
+    return next(
+      new AppError("Please provide at least one field to update", 400)
+    );
   }
 
   if (finalPrice !== undefined && (isNaN(finalPrice) || finalPrice < 0)) {
-    return next(new AppError("Final price must be a valid positive number", 400));
+    return next(
+      new AppError("Final price must be a valid positive number", 400)
+    );
   }
 
   const updatedOrder = await Order.findByIdAndUpdate(
@@ -338,7 +345,7 @@ export const updateOrder = catchAsyncError(async (req, res, next) => {
       ...(phone && { phone }),
       ...(address && { address }),
       ...(status && { status }),
-      ...(finalPrice !== undefined && { finalPrice }), 
+      ...(finalPrice !== undefined && { finalPrice }),
     },
     {
       new: true,
@@ -355,4 +362,77 @@ export const updateOrder = catchAsyncError(async (req, res, next) => {
     message: "Order updated successfully",
     data: updatedOrder,
   });
+});
+
+
+// ==> analysis and reports 
+export const getRevenuePerMonth = catchAsyncError(async (req, res, next) => {
+  const revenue = await Order.aggregate([
+    { $match: { isDeleted: { $ne: true } } },
+    {
+      $group: {
+        _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
+        totalRevenue: { $sum: "$finalPrice" },
+        totalOrders: { $sum: 1 },
+      },
+    },
+    { $sort: { "_id.year": 1, "_id.month": 1 } },
+  ]);
+
+  res.status(200).json({
+    success: true,
+    message: "Monthly revenue fetched successfully",
+    data: revenue,
+  });
+});
+
+// ==> export orders to CSV
+export const exportOrdersToCSV = catchAsyncError(async (req, res, next) => {
+  const orders = await Order.find({ isDeleted: { $ne: true } })
+    .populate("user", "firstName lastName email")
+    .populate("products.productId", "title price");
+
+  const csvData = orders.map((order) => ({
+    OrderID: order._id,
+    Customer: `${order.user.firstName} ${order.user.lastName}`,
+    TotalPrice: order.finalPrice,
+    Status: order.status,
+    Date: order.createdAt.toISOString(),
+  }));
+
+  const parser = new Parser();
+  const csv = parser.parse(csvData);
+
+  res.header("Content-Type", "text/csv");
+  res.attachment("orders-report.csv");
+  res.send(csv);
+});
+
+// ==> export orders to PDF
+export const exportOrdersToPDF = catchAsyncError(async (req, res, next) => {
+  const orders = await Order.find({ isDeleted: { $ne: true } })
+    .populate("user", "firstName lastName email")
+    .populate("products.productId", "title price");
+
+  const doc = new PDFDocument({ margin: 30 });
+  const filename = `orders-report-${Date.now()}.pdf`;
+
+  res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+  res.setHeader("Content-Type", "application/pdf");
+
+  doc.pipe(res);
+
+  doc.fontSize(18).text("Orders Report", { align: "center" });
+  doc.moveDown();
+
+  orders.forEach((order, i) => {
+    doc.fontSize(12).text(`Order #${i + 1}`);
+    doc.text(`Customer: ${order.user.firstName} ${order.user.lastName}`);
+    doc.text(`Total: $${order.finalPrice}`);
+    doc.text(`Status: ${order.status}`);
+    doc.text(`Date: ${order.createdAt.toLocaleString()}`);
+    doc.moveDown();
+  });
+
+  doc.end();
 });

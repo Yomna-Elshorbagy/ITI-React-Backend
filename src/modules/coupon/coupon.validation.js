@@ -24,4 +24,4 @@ export const updateCouponVal = joi
     expire: joi.date().greater(joi.ref("fromDate")),
     id: generalFields.objectId.required(),
   })
-  .required();
+

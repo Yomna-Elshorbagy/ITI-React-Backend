@@ -20,7 +20,7 @@ couponRouter.post("/valid", auth, couponControllers.validateCoupon);
 couponRouter.put(
   "/:id",
   auth,
-  isAuthorized([roles.ADMIN]),
+  // isAuthorized([roles.ADMIN]),
   validate(updateCouponVal),
   couponControllers.updateCoupon
 );
