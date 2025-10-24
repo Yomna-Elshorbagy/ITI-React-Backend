@@ -57,6 +57,7 @@ export const signup = catchAsyncError(async (req, res, next) => {
   const token = await generateToken({
     payload: {
       _id: createdUser._id,
+      name: createdUser.userName,
       email: createdUser.email,
       role: createdUser.role,
     },
@@ -169,6 +170,7 @@ export const logIn = catchAsyncError(async (req, res, next) => {
   const accessToken = await generateToken({
     payload: {
       _id: userExist._id,
+      name: userExist.userName,
       email: userExist.email,
       role: userExist.role,
     },
@@ -249,6 +251,7 @@ export const changePassword = catchAsyncError(async (req, res, next) => {
   const accessToken = await generateToken({
     payload: {
       _id: user._id,
+      name: user.userName,
       email: user.email,
       role: user.role,
     },
