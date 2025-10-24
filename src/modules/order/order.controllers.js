@@ -394,7 +394,7 @@ export const exportOrdersToCSV = catchAsyncError(async (req, res, next) => {
 
   const csvData = orders.map((order) => ({
     OrderID: order._id,
-    Customer: `${order.user.firstName} ${order.user.lastName}`,
+    Customer: `${order.fullName}`,
     TotalPrice: order.finalPrice,
     Status: order.status,
     Date: order.createdAt.toISOString(),
@@ -427,7 +427,7 @@ export const exportOrdersToPDF = catchAsyncError(async (req, res, next) => {
 
   orders.forEach((order, i) => {
     doc.fontSize(12).text(`Order #${i + 1}`);
-    doc.text(`Customer: ${order.user.firstName} ${order.user.lastName}`);
+    doc.text(`Customer: ${order.fullName}`);
     doc.text(`Total: $${order.finalPrice}`);
     doc.text(`Status: ${order.status}`);
     doc.text(`Date: ${order.createdAt.toLocaleString()}`);
