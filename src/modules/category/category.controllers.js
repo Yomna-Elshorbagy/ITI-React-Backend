@@ -119,7 +119,6 @@ export const getCategories = catchAsyncError(async (req, res, next) => {
     isDeleted: { $ne: true },
   });
   const productCounts = await getCategoryProductCount();
-  z;
   const mergedCategories = categories.map((cat) => {
     const foundCount = productCounts.find(
       (pc) => pc._id === cat._id.toString()
