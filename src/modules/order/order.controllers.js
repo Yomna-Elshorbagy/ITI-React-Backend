@@ -364,8 +364,7 @@ export const updateOrder = catchAsyncError(async (req, res, next) => {
   });
 });
 
-
-// ==> analysis and reports 
+// ==> analysis and reports
 export const getRevenuePerMonth = catchAsyncError(async (req, res, next) => {
   const revenue = await Order.aggregate([
     { $match: { isDeleted: { $ne: true } } },
@@ -436,3 +435,29 @@ export const exportOrdersToPDF = catchAsyncError(async (req, res, next) => {
 
   doc.end();
 });
+
+export const getOrdersDistributionByStatus = catchAsyncError(
+  async (req, res, next) => {
+    const distribution = await Order.aggregate([
+      { $match: { isDeleted: { $ne: true } } },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { count: -1 } },
+    ]);
+
+    const formatted = distribution.map((d) => ({
+      status: d._id || "Unknown",
+      count: d.count,
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: "Orders distribution by status fetched successfully",
+      data: formatted,
+    });
+  }
+);

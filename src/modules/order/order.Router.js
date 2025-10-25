@@ -7,6 +7,11 @@ const orderRouter = Router();
 orderRouter.get("/", auth, orderControllers.getUserOrders);
 orderRouter.get("/exportpdf", auth, orderControllers.exportOrdersToPDF);
 orderRouter.get("/exportcsv", auth, orderControllers.exportOrdersToCSV);
+orderRouter.get(
+  "/orderDistrbuted",
+  auth,
+  orderControllers.getOrdersDistributionByStatus
+);
 orderRouter.get("/revenue", auth, orderControllers.getRevenuePerMonth);
 orderRouter.get("/allorders", auth, orderControllers.getAllOrders);
 orderRouter.post("/", auth, orderControllers.createOrder);

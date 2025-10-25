@@ -1,4 +1,5 @@
 import Category from "../../../database/models/category.model.js";
+import Order from "../../../database/models/order.model.js";
 import Product from "../../../database/models/product.model.js";
 import User from "../../../database/models/user.model.js";
 import { AppError, catchAsyncError } from "../../utils/catch-error.js";
@@ -446,5 +447,49 @@ export const importProducts = catchAsyncError(async (req, res, next) => {
   res.status(201).json({
     success: true,
     message: `${validProducts.length} products imported successfully`,
+  });
+});
+
+export const getTopSellingProducts = catchAsyncError(async (req, res, next) => {
+  const topProducts = await Order.aggregate([
+    { $match: { isDeleted: { $ne: true }, status: "completed" } },
+
+    { $unwind: "$products" },
+
+    {
+      $group: {
+        _id: "$products.productId",
+        totalSold: { $sum: "$products.quantity" },
+      },
+    },
+
+    {
+      $lookup: {
+        from: "products",
+        localField: "_id",
+        foreignField: "_id",
+        as: "product",
+      },
+    },
+    { $unwind: "$product" },
+
+    // Project final shape
+    {
+      $project: {
+        _id: 0,
+        title: "$product.title",
+        totalSold: 1,
+      },
+    },
+
+    // Sort by most sold
+    { $sort: { totalSold: -1 } },
+    { $limit: 5 },
+  ]);
+
+  res.status(200).json({
+    success: true,
+    message: "Top-selling products fetched successfully",
+    data: topProducts,
   });
 });

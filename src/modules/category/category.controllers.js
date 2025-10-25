@@ -1,4 +1,5 @@
 import Category from "../../../database/models/category.model.js";
+import Order from "../../../database/models/order.model.js";
 import Product from "../../../database/models/product.model.js";
 import { AppError, catchAsyncError } from "../../utils/catch-error.js";
 import { messages } from "../../utils/constant/messages.js";
@@ -337,4 +338,45 @@ export const getCategoryStats = catchAsyncError(async (req, res, next) => {
     console.error("getCategoryStats error:", error);
     return next(new AppError("Failed to fetch category stats", 500));
   }
+});
+
+export const getRevenueDistribution = catchAsyncError(async (req, res, next) => {
+  const data = await Order.aggregate([
+    {
+      $match: { status: "completed" },
+    },
+    { $unwind: "$products" },
+    {
+      $lookup: {
+        from: "products",
+        localField: "products.productId",
+        foreignField: "_id",
+        as: "productInfo",
+      },
+    },
+    { $unwind: "$productInfo" },
+    {
+      $lookup: {
+        from: "categories",
+        localField: "productInfo.category",
+        foreignField: "_id",
+        as: "categoryInfo",
+      },
+    },
+    { $unwind: "$categoryInfo" },
+    {
+      $group: {
+        _id: "$categoryInfo.name",
+        totalRevenue: { $sum: "$products.finalPrice" },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        category: "$_id",
+        totalRevenue: 1,
+      },
+    },
+  ]);
+  return res.status(200).json({ success: true, data });
 });

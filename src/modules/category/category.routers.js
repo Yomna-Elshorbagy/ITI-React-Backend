@@ -18,6 +18,7 @@ categoryRouter.post(
 );
 
 categoryRouter.get("/", categoryControllers.getAllCategories);
+categoryRouter.get("/getRevenues",auth, categoryControllers.getRevenueDistribution);
 categoryRouter.get("/getCategories", categoryControllers.getCategories);
 categoryRouter.get(
   "/:id/products",
