@@ -103,7 +103,7 @@ export const updateCategoryCloud = catchAsyncError(async (req, res, next) => {
 
 export const getCategories = catchAsyncError(async (req, res, next) => {
   const apiFeature = new ApiFeature(
-    Category.find().populate({
+    Category.find({ isDeleted: { $ne: true } }).populate({
       path: "createdBy",
       select: ["userName", "address", "mobileNumber", "image"],
     }),
@@ -115,9 +115,11 @@ export const getCategories = catchAsyncError(async (req, res, next) => {
     .sort();
 
   const categories = await apiFeature.mongooseQuery;
-  const totalDocuments = await Category.countDocuments();
+  const totalDocuments = await Category.countDocuments({
+    isDeleted: { $ne: true },
+  });
   const productCounts = await getCategoryProductCount();
-
+  z;
   const mergedCategories = categories.map((cat) => {
     const foundCount = productCounts.find(
       (pc) => pc._id === cat._id.toString()
@@ -144,7 +146,6 @@ export const getCategories = catchAsyncError(async (req, res, next) => {
   });
 });
 
-
 export const getSpecificCategory = catchAsyncError(async (req, res, next) => {
   let { id } = req.params;
   let category = await Category.findById(id).populate({
@@ -157,10 +158,12 @@ export const getSpecificCategory = catchAsyncError(async (req, res, next) => {
 });
 
 export const getAllCategories = catchAsyncError(async (req, res, next) => {
-  const categories = await Category.find().populate({
-    path: "createdBy",
-    select: ["userName", "address", "userName", "mobileNumber", "image"],
-  });
+  const categories = await Category.find({ isDeleted: { $ne: true } }).populate(
+    {
+      path: "createdBy",
+      select: ["userName", "address", "userName", "mobileNumber", "image"],
+    }
+  );
   res.status(200).json({ message: "Categories are : ", data: categories });
 });
 

@@ -17,13 +17,18 @@ export const getProfile = catchAsyncError(async (req, res, next) => {
 });
 
 export const getAllUsers = catchAsyncError(async (req, res, next) => {
-  const apiFeature = new ApiFeature(User.find(), req.query)
+  const baseQuery = User.find({ status: { $ne: status.DELETED } });
+  const apiFeature = new ApiFeature(baseQuery, req.query)
     .filter()
     .search()
     .sort()
     .select()
     .pagination();
-  const totalUsers = await User.countDocuments();
+
+  const totalUsers = await User.countDocuments({
+    status: { $ne: status.DELETED },
+  });
+
   const users = await apiFeature.mongooseQuery;
   const page = parseInt(req.query.page) || 1;
   const size = parseInt(req.query.size) || 10;
@@ -33,7 +38,7 @@ export const getAllUsers = catchAsyncError(async (req, res, next) => {
     success: true,
     message: messages.user.fetchedSuccessfully,
     data: users,
-        meta: {
+    meta: {
       totalUsers,
       page,
       size,
@@ -41,7 +46,6 @@ export const getAllUsers = catchAsyncError(async (req, res, next) => {
       hasNextPage: page < totalPages,
       hasPrevPage: page > 1,
     },
-
   });
 });
 
@@ -187,7 +191,6 @@ export const updateUser = catchAsyncError(async (req, res, next) => {
   });
 });
 
-
 export const deleteUserByUser = catchAsyncError(async (req, res, next) => {
   const id = req.authUser._id;
   const user = await User.findById(id);
@@ -244,7 +247,6 @@ export const updateUserByAdmin = catchAsyncError(async (req, res, next) => {
       return next(new AppError("Mobile number is already in use", 409));
   }
 
-  
   if (newPassword || confirmPassword) {
     if (!newPassword || !confirmPassword) {
       return next(

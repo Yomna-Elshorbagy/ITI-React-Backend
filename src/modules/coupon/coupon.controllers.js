@@ -100,8 +100,9 @@ export const getCoupon = catchAsyncError(async (req, res, next) => {
 export const getCoupons = catchAsyncError(async (req, res, next) => {
   const page = parseInt(req.query.page) || 1;
   const size = parseInt(req.query.size) || 10;
+  const baseQuery = Coupon.find({ isDeleted: { $ne: true } });
 
-  const apiFeature = new ApiFeature(Coupon.find(), req.query)
+  const apiFeature = new ApiFeature(baseQuery, req.query)
     .filter()
     .sort()
     .select()
@@ -109,8 +110,9 @@ export const getCoupons = catchAsyncError(async (req, res, next) => {
 
   const coupons = await apiFeature.mongooseQuery;
 
-  const { page: p, size: s, ...filters } = req.query;
-  const totalDocuments = await Coupon.countDocuments(filters);
+  const totalDocuments = await Coupon.countDocuments({
+    isDeleted: { $ne: true },
+  });
   const numberOfPages = Math.ceil(totalDocuments / size);
 
   const metadata = {
@@ -131,7 +133,6 @@ export const getCoupons = catchAsyncError(async (req, res, next) => {
   });
 });
 
-
 export const validateCoupon = catchAsyncError(async (req, res, next) => {
   const { code } = req.body;
   const coupon = await Coupon.findOne({ code });
@@ -148,5 +149,26 @@ export const validateCoupon = catchAsyncError(async (req, res, next) => {
     message: "coupon is valid",
     success: true,
     data: coupon,
+  });
+});
+
+export const softDeleteCoupon = catchAsyncError(async (req, res, next) => {
+  const { id } = req.params;
+
+  const couponExist = await Coupon.findById(id);
+  if (!couponExist) return next(new AppError(messages.coupon.notFound, 404));
+
+  if (couponExist.isDeleted) {
+    return next(new AppError(messages.coupon.deletedSuccessfully || "Coupon already deleted", 400));
+  }
+
+  couponExist.isDeleted = true;
+  couponExist.deletedAt = new Date();
+  await couponExist.save();
+
+  res.status(200).json({
+    message: messages.coupon.deletedSuccessfully || "Coupon soft deleted successfully",
+    success: true,
+    data: couponExist,
   });
 });

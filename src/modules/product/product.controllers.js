@@ -175,7 +175,7 @@ export const getLowStock = catchAsyncError(async (req, res) => {
 });
 
 export const getAllProducts = catchAsyncError(async (req, res, next) => {
-  const Products = await Product.find()
+  const Products = await Product.find({ isDeleted: { $ne: true } })
     .populate({
       path: "createdBy",
       select: ["address", "userName", "mobileNumber"],

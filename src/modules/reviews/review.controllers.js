@@ -3,6 +3,7 @@ import Review from "../../../database/models/review.model.js";
 import { AppError, catchAsyncError } from "../../utils/catch-error.js";
 import { roles } from "../../utils/constant/enums.js";
 import { messages } from "../../utils/constant/messages.js";
+import { ApiFeature } from "../../utils/file-feature.js";
 
 //===> adding review
 export const addReview = catchAsyncError(async (req, res, next) => {
@@ -148,5 +149,83 @@ export const updateReview = catchAsyncError(async (req, res, next) => {
     message: messages.review.updatedSuccessfully,
     success: true,
     data: { avgRating, rate },
+  });
+});
+
+export const getAllReviews = catchAsyncError(async (req, res, next) => {
+  const baseQuery = Review.find({ isDeleted: { $ne: true } })
+    .populate({
+      path: "user",
+      select: ["firstName", "lastName", "email"],
+    })
+    .populate({
+      path: "product",
+      select: ["title", "price", "finalPrice"],
+    });
+
+  const apiFeature = new ApiFeature(baseQuery, req.query)
+    .filter()
+    .search()
+    .pagination()
+    .sort();
+
+  const reviews = await apiFeature.mongooseQuery;
+
+  const totalDocuments = await Review.countDocuments({
+    isDeleted: { $ne: true },
+  });
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.size) || 10;
+  const numberOfPages = Math.ceil(totalDocuments / limit);
+
+  return res.status(200).json({
+    success: true,
+    message: messages.SUCCESS,
+    results: reviews.length,
+    metadata: {
+      currentPage: page,
+      numberOfPages,
+      limit,
+      prevPage: page > 1 ? page - 1 : null,
+      nextPage: page < numberOfPages ? page + 1 : null,
+    },
+    data: reviews,
+  });
+});
+
+//===> soft delete review and recalculate avgRate
+export const softDeleteReview = catchAsyncError(async (req, res, next) => {
+  const { id } = req.params;
+
+  const reviewExist = await Review.findById(id);
+  if (!reviewExist) return next(new AppError(messages.review.notFound, 404));
+
+  if (
+    req.authUser._id.toString() !== reviewExist.user.toString() &&
+    req.authUser.role !== roles.ADMIN
+  ) {
+    return next(new AppError(messages.user.notAllowed, 401));
+  }
+
+  reviewExist.isDeleted = true;
+  await reviewExist.save();
+
+  const productId = reviewExist.product;
+  const ratings = await Review.find({
+    product: productId,
+    isDeleted: { $ne: true },
+  }).select("rate");
+
+  const avgRating =
+    ratings.length > 0
+      ? ratings.reduce((sum, item) => sum + item.rate, 0) / ratings.length
+      : 0;
+
+  await Product.findByIdAndUpdate(productId, { rate: avgRating }, { new: true });
+
+  res.status(200).json({
+    success: true,
+    message: messages.review.deletedSuccessfully || "Review soft deleted successfully",
   });
 });
