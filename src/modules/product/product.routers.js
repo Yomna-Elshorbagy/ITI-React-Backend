@@ -45,6 +45,12 @@ productRouter
     productControllers.updateProductCloud
   );
 productRouter.get("/related/:productId", productControllers.getRelatedProducts);
+productRouter.put(
+  "/soft/:id",
+  auth,
+  isAuthorized([roles.ADMIN]),
+  productControllers.softDeleteProduct
+);
 productRouter.delete(
   "/:id",
   auth,

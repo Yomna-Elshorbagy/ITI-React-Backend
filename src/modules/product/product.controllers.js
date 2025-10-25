@@ -206,7 +206,9 @@ export const getSpeCificProduct = catchAsyncError(async (req, res, next) => {
 export const getProducts = catchAsyncError(async (req, res, next) => {
   const { category, page = 1, size = 10 } = req.query;
 
-  let productQuery = Product.find()
+  const filter = { isDeleted: { $ne: true } };
+
+  let productQuery = Product.find(filter)
     .populate({
       path: "createdBy",
       select: ["address", "userName", "mobileNumber"],
@@ -216,7 +218,6 @@ export const getProducts = catchAsyncError(async (req, res, next) => {
       select: ["name", "image", "createdBy"],
     });
 
-  // If category is provided, filter by it
   if (category) {
     productQuery = productQuery.where("category").equals(category);
   }
@@ -313,7 +314,7 @@ export const subscribeToPriceDrop = catchAsyncError(async (req, res, next) => {
 });
 
 export const contactProductOwner = catchAsyncError(async (req, res, next) => {
-  const { _id: authUserId, mobileNumber: authUserMobile } = req.authUser; 
+  const { _id: authUserId, mobileNumber: authUserMobile } = req.authUser;
   const { productId } = req.params;
 
   const product = await Product.findById(productId);
@@ -325,12 +326,12 @@ export const contactProductOwner = catchAsyncError(async (req, res, next) => {
   }
 
   const formatEgyptianNumber = (number) => {
-    let cleanedNumber = number.replace(/\D/g, ""); 
+    let cleanedNumber = number.replace(/\D/g, "");
     if (cleanedNumber.startsWith("0")) {
       cleanedNumber = cleanedNumber.substring(1);
     }
     if (!cleanedNumber.startsWith("20")) {
-      cleanedNumber = "20" + cleanedNumber; 
+      cleanedNumber = "20" + cleanedNumber;
     }
     return cleanedNumber;
   };
@@ -379,8 +380,39 @@ export const exportProducts = catchAsyncError(async (req, res, next) => {
   res.status(200).json(products);
 });
 
+export const softDeleteProduct = catchAsyncError(async (req, res, next) => {
+  const { id } = req.params;
+
+  const product = await Product.findById(id);
+  if (!product) return next(new AppError(messages.product.notFound, 404));
+
+  if (
+    product.createdBy.toString() !== req.authUser._id.toString() &&
+    req.authUser.role !== "admin"
+  ) {
+    return next(
+      new AppError("You are not authorized to delete this product", 403)
+    );
+  }
+
+  if (product.isDeleted)
+    return next(new AppError(messages.product.alreadyDeleted, 400));
+
+  product.isDeleted = true;
+  product.deletedBy = req.authUser._id;
+  product.deletedAt = new Date();
+
+  await product.save();
+
+  res.status(200).json({
+    success: true,
+    message: messages.product.deletedSuccessfully,
+    data: product,
+  });
+});
+
 export const importProducts = catchAsyncError(async (req, res, next) => {
-  const products = req.body; 
+  const products = req.body;
 
   if (!Array.isArray(products) || products.length === 0) {
     return next(new AppError("Invalid or empty product data", 400));

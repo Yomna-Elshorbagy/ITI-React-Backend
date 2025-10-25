@@ -18,17 +18,18 @@ orderRouter.put(
   isAuthorized([roles.ADMIN]),
   orderControllers.updateOrderStatus
 );
+orderRouter.put(
+  "/soft/:id",
+  auth,
+  isAuthorized([roles.ADMIN]),
+  orderControllers.softDeleteOrder
+);
+
 orderRouter.delete(
   "/hard/:id",
   auth,
   isAuthorized([roles.ADMIN]),
   orderControllers.hardDeleteOrder
-);
-orderRouter.delete(
-  "/soft/:id",
-  auth,
-  isAuthorized([roles.ADMIN]),
-  orderControllers.softDeleteOrder
 );
 
 export default orderRouter;

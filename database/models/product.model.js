@@ -62,6 +62,13 @@ let productSchema = mongoose.Schema(
       default: 5,
     },
     isDeleted: { type: Boolean, default: false },
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    deletedAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

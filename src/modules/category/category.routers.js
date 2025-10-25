@@ -28,7 +28,12 @@ categoryRouter.get(
   categoryControllers.getTrendingCategories
 );
 categoryRouter.get("/analytics/stats", categoryControllers.getCategoryStats);
-
+categoryRouter.put(
+  "/soft/:id",
+  auth,
+  isAuthorized([roles.ADMIN]),
+  categoryControllers.softDeleteCategory
+);
 categoryRouter
   .route("/:id")
   .get(categoryControllers.getSpecificCategory)

@@ -199,6 +199,32 @@ export const deleteCategoryCloud = catchAsyncError(async (req, res, next) => {
     success: true,
   });
 });
+export const softDeleteCategory = catchAsyncError(async (req, res, next) => {
+  const { id } = req.params;
+
+  const category = await Category.findById(id);
+  if (!category) return next(new AppError(messages.category.notFound, 404));
+
+  if (category.isDeleted)
+    return next(new AppError(messages.category.alreadyDeleted, 400));
+
+  category.isDeleted = true;
+  category.deletedBy = req.authUser._id;
+  category.deletedAt = new Date();
+
+  await category.save();
+
+  await Product.updateMany(
+    { category: id },
+    { isDeleted: true, deletedBy: req.authUser._id, deletedAt: new Date() }
+  );
+
+  res.status(200).json({
+    success: true,
+    message: messages.category.deletedSuccessfully,
+    data: category,
+  });
+});
 
 export const getProductsByCategoryId = catchAsyncError(
   async (req, res, next) => {

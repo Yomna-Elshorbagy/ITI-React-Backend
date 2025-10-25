@@ -19,6 +19,13 @@ const categorySchema = mongoose.Schema(
       required: [true, "Created by user ID is required"],
     },
     isDeleted: { type: Boolean, default: false },
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    deletedAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

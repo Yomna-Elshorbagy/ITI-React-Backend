@@ -24,16 +24,17 @@ couponRouter.put(
   validate(updateCouponVal),
   couponControllers.updateCoupon
 );
-couponRouter.delete(
-  "/:id",
-  auth,
-  isAuthorized([roles.ADMIN]),
-  couponControllers.deleteCoupon
-);
 couponRouter.put(
   "/:id",
   auth,
   isAuthorized([roles.ADMIN]),
   couponControllers.softDeleteCoupon
 );
+couponRouter.delete(
+  "/:id",
+  auth,
+  isAuthorized([roles.ADMIN]),
+  couponControllers.deleteCoupon
+);
+
 export default couponRouter;
