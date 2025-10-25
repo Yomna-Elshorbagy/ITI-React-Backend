@@ -32,10 +32,11 @@ export const getAllContacts = catchAsyncError(async (req, res, next) => {
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const totalContacts = await Contact.countDocuments();
+  const filter = { isDeleted: { $ne: true } };
+  const totalContacts = await Contact.countDocuments(filter);
   const totalPages = Math.ceil(totalContacts / limit);
 
-  const contacts = await Contact.find()
+  const contacts = await Contact.find(filter)
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
@@ -118,12 +119,16 @@ export const softDeleteContact = catchAsyncError(async (req, res, next) => {
 export const updateContact = catchAsyncError(async (req, res, next) => {
   const { id } = req.params;
 
-  const allowedUpdates = ["fullName", "email", "message", "replyStatus", "replyMessage"];
+  const allowedUpdates = [
+    "fullName",
+    "email",
+    "message",
+    "replyStatus",
+    "replyMessage",
+  ];
   const updates = Object.keys(req.body);
 
-  const isValidOperation = updates.every((key) =>
-    allowedUpdates.includes(key)
-  );
+  const isValidOperation = updates.every((key) => allowedUpdates.includes(key));
 
   if (!isValidOperation)
     return next(new AppError("Invalid fields for update", 400));
@@ -147,4 +152,3 @@ export const updateContact = catchAsyncError(async (req, res, next) => {
     data: contact,
   });
 });
-

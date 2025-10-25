@@ -40,6 +40,6 @@ Object.freeze(payments);
 
 export const replay = {
   REPLIED: "replied",
-  INPROGRESS: "in progress",
+  INPROGRESS: "inProgress",
   PENDING: "pending",
 };

@@ -8,7 +8,7 @@ const contactRouter = Router();
 contactRouter.post("/", contactControllers.contactUs);
 contactRouter.get("/", auth, contactControllers.getAllContacts);
 contactRouter.delete("/:id", auth, contactControllers.deleteContact);
-contactRouter.delete(
+contactRouter.put(
   "/softdelete/:id",
   auth,
   contactControllers.softDeleteContact
