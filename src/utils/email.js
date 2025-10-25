@@ -24,6 +24,7 @@ export const sendEmail = async (_id , email, role,  otpCode ) => {
       });
 
       console.log("Message sent: %s", info.messageId);
+        return token;
   }
 
 
