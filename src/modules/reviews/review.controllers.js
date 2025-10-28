@@ -3,6 +3,7 @@ import Review from "../../../database/models/review.model.js";
 import { AppError, catchAsyncError } from "../../utils/catch-error.js";
 import { roles } from "../../utils/constant/enums.js";
 import { messages } from "../../utils/constant/messages.js";
+import { sendCustomEmail } from "../../utils/email.js";
 import { ApiFeature } from "../../utils/file-feature.js";
 
 //===> adding review
@@ -222,10 +223,73 @@ export const softDeleteReview = catchAsyncError(async (req, res, next) => {
       ? ratings.reduce((sum, item) => sum + item.rate, 0) / ratings.length
       : 0;
 
-  await Product.findByIdAndUpdate(productId, { rate: avgRating }, { new: true });
+  await Product.findByIdAndUpdate(
+    productId,
+    { rate: avgRating },
+    { new: true }
+  );
 
   res.status(200).json({
     success: true,
-    message: messages.review.deletedSuccessfully || "Review soft deleted successfully",
+    message:
+      messages.review.deletedSuccessfully || "Review soft deleted successfully",
+  });
+});
+//====> ADMIN: get product reviews with contact info 
+export const getProductReviewsWithContacts = catchAsyncError(
+  async (req, res, next) => {
+    const { productId } = req.params;
+
+    const productExist = await Product.findById(productId);
+    if (!productExist)
+      return next(new AppError(messages.product.notFound, 404));
+
+    const reviews = await Review.find({
+      product: productId,
+      isDeleted: { $ne: true },
+    })
+      .populate("user", "userName email mobileNumber")
+      .populate("product", "title");
+
+    res.status(200).json({
+      success: true,
+      message: messages.SUCCESS,
+      data: reviews,
+    });
+  }
+);
+
+//===> admin: contact review user by email 
+export const contactReviewUser = catchAsyncError(async (req, res, next) => {
+  const { reviewId } = req.params;
+  const { subject, message } = req.body;
+
+  if (req.authUser.role !== roles.ADMIN)
+    return next(new AppError(messages.user.notAllowed, 403));
+
+  const review = await Review.findById(reviewId).populate(
+    "user",
+    "userName email mobileNumber"
+  );
+
+  if (!review) return next(new AppError(messages.review.notFound, 404));
+
+  const userEmail = review.user.email;
+  if (!userEmail)
+    return next(new AppError("This user has no email registered", 400));
+
+  const emailSubject = subject || "Regarding your product review";
+  const emailMessage =
+    message || "Dear user, we wanted to contact you about your review.";
+
+  await sendCustomEmail({
+    to: userEmail,
+    subject: emailSubject,
+    text: emailMessage,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: `Email sent successfully to ${userEmail}`,
   });
 });

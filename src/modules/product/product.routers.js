@@ -26,8 +26,19 @@ productRouter.get("/trending", productControllers.getTrendingProducts);
 productRouter.get("/topSelling",auth, productControllers.getTopSellingProducts);
 productRouter.get("/lowstock", productControllers.getLowStock);
 productRouter.get("/export", auth, productControllers.exportProducts);
-productRouter.post("/import", auth, productControllers.importProducts);
+productRouter.get("/related/:productId", productControllers.getRelatedProducts);
 
+productRouter.post("/import", auth, productControllers.importProducts);
+productRouter.post(
+  "/notify-price-drop/:productId",
+  auth,
+  productControllers.notifyUsersAboutPriceDrop
+);
+productRouter.post(
+  "/subscribe-price/:productId",
+  auth,
+  productControllers.subscribeToPriceDrop
+);
 productRouter.get(
   "/contact/:productId",
   auth,

@@ -27,6 +27,16 @@ reviewRouter.put(
   validate(updateReviewVal),
   reviewController.updateReview
 );
+reviewRouter.post(
+  "/contact-user/:reviewId",
+  auth,
+  reviewController.contactReviewUser
+);
+reviewRouter.get(
+  "/with-contacts/:productId",
+  auth,
+  reviewController.getProductReviewsWithContacts
+);
 reviewRouter.delete(
   "/:id",
   auth,
