@@ -134,9 +134,27 @@ export const updateOrderStatus = catchAsyncError(async (req, res, next) => {
   if (!validStatuses.includes(status))
     return next(new AppError("Invalid order status", 400));
 
-  const order = await Order.findByIdAndUpdate(id, { status }, { new: true });
+  const order = await Order.findById(id).populate("products.productId");
+  if (!order) return next(new AppError(messages.order.notFound, 404));
 
-  if (!order) return next(new AppError(messages.NOT_FOUND, 404));
+  // If order is already cancelled, prevent double-restock
+  if (order.status === orderStatus.CANCELED && status === orderStatus.CANCELED) {
+    return next(new AppError("Order is already cancelled", 400));
+  }
+
+  // If changing status to cancelled restore stock quantities
+  if (status === orderStatus.CANCELED) {
+    for (const item of order.products) {
+      if (item.productId) {
+        await Product.findByIdAndUpdate(item.productId._id, {
+          $inc: { stock: item.quantity },
+        });
+      }
+    }
+  }
+
+  order.status = status;
+  await order.save();
 
   return res.status(200).json({
     message: "Order status updated successfully",
@@ -338,29 +356,74 @@ export const updateOrder = catchAsyncError(async (req, res, next) => {
     );
   }
 
-  const updatedOrder = await Order.findByIdAndUpdate(
-    id,
-    {
-      ...(fullName && { fullName }),
-      ...(phone && { phone }),
-      ...(address && { address }),
-      ...(status && { status }),
-      ...(finalPrice !== undefined && { finalPrice }),
-    },
-    {
-      new: true,
-      runValidators: true,
-    }
-  ).populate("products.productId", "title price finalPrice");
-
-  if (!updatedOrder) {
+  const order = await Order.findById(id).populate("products.productId");
+  if (!order) {
     return next(new AppError(messages.order.notFound, 404));
   }
+
+  if (status && status ===  orderStatus.CANCELED && order.status !==  orderStatus.CANCELED) {
+    for (const item of order.products) {
+      if (item.productId) {
+        await Product.findByIdAndUpdate(item.productId._id, {
+          $inc: { stock: item.quantity },
+        });
+      }
+    }
+  }
+
+  // Apply updates
+  if (fullName) order.fullName = fullName;
+  if (phone) order.phone = phone;
+  if (address) order.address = address;
+  if (status) order.status = status;
+  if (finalPrice !== undefined) order.finalPrice = finalPrice;
+
+  await order.save();
+
+  // repopulate for consistent response
+  const updatedOrder = await Order.findById(order._id).populate(
+    "products.productId",
+    "title price finalPrice"
+  );
 
   return res.status(200).json({
     success: true,
     message: "Order updated successfully",
     data: updatedOrder,
+  });
+});
+
+export const getUserOrderCounts = catchAsyncError(async (req, res, next) => {
+  const counts = await Order.aggregate([
+    { $match: { isDeleted: { $ne: true } } },
+    { $group: { _id: "$user", totalOrders: { $sum: 1 } } },
+    {
+      $lookup: {
+        from: "users",
+        localField: "_id",
+        foreignField: "_id",
+        as: "user",
+      },
+    },
+    { $unwind: "$user" },
+    {
+      $project: {
+        _id: 0,
+        userId: "$user._id",
+        userName: "$user.userName",
+        email: "$user.email",
+        image: "$user.image",
+        mobileNumber: "$user.mobileNumber",
+        role: "$user.role",
+        totalOrders: 1,
+      },
+    },
+  ]);
+
+  res.status(200).json({
+    success: true,
+    message: "User order counts fetched successfully",
+    data: counts,
   });
 });
 

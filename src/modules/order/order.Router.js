@@ -5,6 +5,7 @@ import { roles } from "../../utils/constant/enums.js";
 
 const orderRouter = Router();
 orderRouter.get("/", auth, orderControllers.getUserOrders);
+orderRouter.get("/order-count", orderControllers.getUserOrderCounts);
 orderRouter.get("/exportpdf", auth, orderControllers.exportOrdersToPDF);
 orderRouter.get("/exportcsv", auth, orderControllers.exportOrdersToCSV);
 orderRouter.get(
