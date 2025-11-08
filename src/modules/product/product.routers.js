@@ -39,6 +39,11 @@ productRouter.post(
   auth,
   productControllers.subscribeToPriceDrop
 );
+productRouter.delete(
+  "/unsubscribe-price/:productId",
+  auth,
+  productControllers.removePriceDropSubscription
+);
 productRouter.get(
   "/contact/:productId",
   auth,

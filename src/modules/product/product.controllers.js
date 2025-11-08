@@ -5,6 +5,7 @@ import Product from "../../../database/models/product.model.js";
 import User from "../../../database/models/user.model.js";
 import { AppError, catchAsyncError } from "../../utils/catch-error.js";
 import { messages } from "../../utils/constant/messages.js";
+import { notifyUsersAboutPriceDropInternal } from "../../utils/email.js";
 import { ApiFeature } from "../../utils/file-feature.js";
 import cloudinary from "../../utils/fileUpload/cloudinary.js";
 import { deleteCloud } from "../../utils/fileUpload/file-functions.js";
@@ -449,6 +450,7 @@ export const importProducts = catchAsyncError(async (req, res, next) => {
     success: true,
     message: `${validProducts.length} products imported successfully`,
   });
+
 });
 
 export const getTopSellingProducts = catchAsyncError(async (req, res, next) => {
@@ -495,66 +497,34 @@ export const getTopSellingProducts = catchAsyncError(async (req, res, next) => {
   });
 });
 
+
+
 export const notifyUsersAboutPriceDrop = catchAsyncError(async (req, res) => {
-  try {
-    const { productId } = req.params;
-    const { oldPrice, newPrice } = req.body;
+  const { productId } = req.params;
+  const { oldPrice, newPrice } = req.body;
 
-    if (!oldPrice || !newPrice) {
-      return res
-        .status(400)
-        .json({ error: "oldPrice and newPrice are required." });
-    }
+  await notifyUsersAboutPriceDropInternal(productId, oldPrice, newPrice);
 
-    const alerts = await PriceAlert.find({
-      product: productId,
-      subscribedPrice: { $gt: newPrice },
-    }).populate("user");
+  res.status(200).json({ message: "Notifications sent successfully" });
+});
 
-    if (!alerts.length) {
-      return res
-        .status(200)
-        .json({ message: "No users subscribed for price alerts." });
-    }
+export const removePriceDropSubscription = catchAsyncError(async (req, res, next) => {
+  const { productId } = req.params;
+  const userId = req.authUser._id;
 
-    const emailList = [];
+  const subscription = await PriceAlert.findOne({ user: userId, product: productId });
 
-    for (const alert of alerts) {
-      if (alert.user.email) {
-        emailList.push(alert.user.email);
-      }
-      if (alert.user.mobileNumber) {
-        await sendWhatsAppNotification(
-          alert.user.mobileNumber,
-          oldPrice,
-          newPrice
-        );
-      }
-    }
-
-    if (emailList.length) {
-      const transporter = nodemailer.createTransport({
-        service: "Gmail",
-        auth: {
-          user: process.env.SENDEMAIL,
-          pass: process.env.SENDEMAILPASSWORD,
-        },
-      });
-
-      const mailOptions = {
-        from: process.env.SENDEMAIL,
-        to: emailList,
-        subject: "Price Drop Alert!",
-        text: `Good news! The product you subscribed to has dropped in price from $${oldPrice} to $${newPrice}. Check it out now!`,
-      };
-
-      await transporter.sendMail(mailOptions);
-      console.log(`📩 Sent email notifications to ${emailList.length} users.`);
-    }
-
-    res.status(200).json({ message: "Notifications sent successfully" });
-  } catch (error) {
-    console.error("❌ Error sending notifications:", error);
-    res.status(500).json({ error: "Failed to send notifications" });
+  if (!subscription) {
+    return res.status(404).json({
+      success: false,
+      message: "You are not subscribed to this product's price alerts.",
+    });
   }
+
+  await PriceAlert.findByIdAndDelete(subscription._id);
+
+  res.status(200).json({
+    success: true,
+    message: "You have successfully unsubscribed from price drop alerts for this product.",
+  });
 });

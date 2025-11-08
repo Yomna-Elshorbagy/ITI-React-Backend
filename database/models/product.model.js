@@ -1,4 +1,5 @@
 import mongoose, { Mongoose } from "mongoose";
+import { notifyUsersAboutPriceDropInternal } from "../../src/utils/email.js";
 
 let productSchema = mongoose.Schema(
   {
@@ -87,21 +88,21 @@ productSchema.methods.instock = function (quantity) {
 };
 
 productSchema.pre("save", async function (next) {
-  if (!this.isModified("price")) return next(); // Only run if price changes
+  if (!this.isModified("price") && !this.isModified("discount")) return next();
 
   const previousProduct = await Product.findById(this._id);
   if (!previousProduct) return next();
 
-  if (this.price < previousProduct.price) {
-    await notifyUsersAboutPriceDrop(
-      this._id,
-      previousProduct.price,
-      this.price
-    );
+  const oldFinalPrice = previousProduct.price - previousProduct.price * ((previousProduct.discount || 0) / 100);
+  const newFinalPrice = this.price - this.price * ((this.discount || 0) / 100);
+
+  if (newFinalPrice < oldFinalPrice) {
+    await notifyUsersAboutPriceDropInternal(this._id, oldFinalPrice, newFinalPrice);
   }
 
   next();
 });
+
 
 //==> get Reviews for specific product with virtual populate
 productSchema.virtual("Reviews", {
