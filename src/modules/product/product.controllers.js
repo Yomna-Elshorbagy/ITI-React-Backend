@@ -497,8 +497,6 @@ export const getTopSellingProducts = catchAsyncError(async (req, res, next) => {
   });
 });
 
-
-
 export const notifyUsersAboutPriceDrop = catchAsyncError(async (req, res) => {
   const { productId } = req.params;
   const { oldPrice, newPrice } = req.body;
@@ -526,5 +524,32 @@ export const removePriceDropSubscription = catchAsyncError(async (req, res, next
   res.status(200).json({
     success: true,
     message: "You have successfully unsubscribed from price drop alerts for this product.",
+  });
+});
+
+export const getUserPriceSubscriptions = catchAsyncError(async (req, res, next) => {
+  const userId = req.authUser._id;
+
+  const subscriptions = await PriceAlert.find({ user: userId }).populate({
+    path: "product",
+    select: "_id title price imageCover",
+  });
+
+  if (!subscriptions || subscriptions.length === 0) {
+    return res.status(200).json({
+      success: true,
+      message: "No active price drop subscriptions found.",
+      subscribedProductIds: [],
+      data: [],
+    });
+  }
+
+  const productIds = subscriptions.map((s) => s.product._id);
+
+  res.status(200).json({
+    success: true,
+    message: "Fetched subscribed price alerts successfully.",
+    subscribedProductIds: productIds,
+    data: subscriptions, 
   });
 });

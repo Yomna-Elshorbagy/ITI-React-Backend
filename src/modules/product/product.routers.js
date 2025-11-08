@@ -34,6 +34,11 @@ productRouter.post(
   auth,
   productControllers.notifyUsersAboutPriceDrop
 );
+productRouter.get(
+  "/get-subscribed-prices",
+  auth,
+  productControllers.getUserPriceSubscriptions 
+);
 productRouter.post(
   "/subscribe-price/:productId",
   auth,
