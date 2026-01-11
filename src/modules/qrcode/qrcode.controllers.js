@@ -7,7 +7,7 @@ import { messages } from "../../utils/constant/messages.js";
 // generate QR Code with expiration
 export const generateQr = catchAsyncError(async (req, res, next) => {
   try {
-    // Create a signed token with expiry (e.g., 5 minutes)
+    // create a signed token with expiry 1h
     const token = jwt.sign(
       { type: "qr", user: req.authUser?._id || null },
       process.env.SECRET_KEY,

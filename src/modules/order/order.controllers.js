@@ -100,7 +100,7 @@ export const createOrder = catchAsyncError(async (req, res, next) => {
 
 export const getUserOrders = catchAsyncError(async (req, res, next) => {
   const userId = req.authUser._id;
-  const orders = await Order.find({ user: userId })
+  const orders = await Order.find({ user: userId, isDeleted:false })
     .sort({ createdAt: -1 })
     .populate("products.productId");
 

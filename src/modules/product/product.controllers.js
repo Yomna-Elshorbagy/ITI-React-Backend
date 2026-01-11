@@ -165,8 +165,8 @@ export const deleteProduct = catchAsyncError(async (req, res, next) => {
   if (!deleteProduct)
     return next(new AppError(messages.product.failToUpdate, 500));
   res.status(200).json({
-    message: messages.product.deletedSucessfully,
-    sucess: true,
+    message: messages.product.deletedSuccessfully,
+    success: true,
     data: deleteProduct,
   });
 });
@@ -207,7 +207,7 @@ export const getSpeCificProduct = catchAsyncError(async (req, res, next) => {
 
 //===> get products but with api feature
 export const getProducts = catchAsyncError(async (req, res, next) => {
-  const { category, page = 1, size = 10 } = req.query;
+  const { category, page = 1, size = 20 } = req.query;
 
   const filter = { isDeleted: { $ne: true } };
 

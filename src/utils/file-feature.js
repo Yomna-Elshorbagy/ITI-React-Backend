@@ -7,7 +7,7 @@ export class ApiFeature {
   pagination() {
     let { page, size } = this.queryData;
     page = parseInt(page) || 1;
-    size = parseInt(size) || 10;
+    size = parseInt(size) || 20;
     if (page <= 0) page = 1;
     if (size <= 0) size = 2;
     let skip = (page - 1) * size;
@@ -49,7 +49,6 @@ export class ApiFeature {
         "user",
         "product",
         "comment",
-        "discount",
       ];
       const searchQuery = {
         $or: searchFields.map((field) => ({
