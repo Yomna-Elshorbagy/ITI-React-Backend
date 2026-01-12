@@ -100,7 +100,7 @@ export const createOrder = catchAsyncError(async (req, res, next) => {
 
 export const getUserOrders = catchAsyncError(async (req, res, next) => {
   const userId = req.authUser._id;
-  const orders = await Order.find({ user: userId, isDeleted:false })
+  const orders = await Order.find({ user: userId, isDeleted: false })
     .sort({ createdAt: -1 })
     .populate("products.productId");
 
@@ -197,7 +197,6 @@ export const createOrderWithLocation = catchAsyncError(
     const { address, phone, location, fullName } = req.body;
 
     const user = req.authUser;
-    console.log("🧭 Authenticated user ID:", req.authUser._id);
 
     if (!user) return next(new AppError(messages.auth.userNotFound, 401));
 
@@ -287,7 +286,7 @@ export const createOrderWithLocation = catchAsyncError(
 
     const order = await Order.create({
       user: user._id,
-      userName: fullName,
+      fullName: fullName,
       email,
       products: orderProducts,
       address: address || null,
@@ -361,7 +360,7 @@ export const updateOrder = catchAsyncError(async (req, res, next) => {
     return next(new AppError(messages.order.notFound, 404));
   }
 
-  if (status && status ===  orderStatus.CANCELED && order.status !==  orderStatus.CANCELED) {
+  if (status && status === orderStatus.CANCELED && order.status !== orderStatus.CANCELED) {
     for (const item of order.products) {
       if (item.productId) {
         await Product.findByIdAndUpdate(item.productId._id, {

@@ -16,6 +16,11 @@ orderRouter.get(
 orderRouter.get("/revenue", auth, orderControllers.getRevenuePerMonth);
 orderRouter.get("/allorders", auth, orderControllers.getAllOrders);
 orderRouter.post("/", auth, orderControllers.createOrder);
+orderRouter.post(
+  "/with-location",
+  auth,
+  orderControllers.createOrderWithLocation
+);
 orderRouter.get("/:id", auth, orderControllers.getOrderDetails);
 orderRouter.put("/:id", auth, orderControllers.updateOrder);
 orderRouter.put(

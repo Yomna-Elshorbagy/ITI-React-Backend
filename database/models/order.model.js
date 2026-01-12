@@ -36,8 +36,14 @@ const orderSchema = new Schema(
 
     address: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
+    },
+
+    location: {
+      latitude: Number,
+      longitude: Number,
+      description: String,
     },
 
     phone: {
